@@ -10,6 +10,8 @@ node_modules/
 atlas-credentials.env
 *credentials*.env
 
+**/serviceAccountKey.json
+
 # Build files
 dist/
 build/
