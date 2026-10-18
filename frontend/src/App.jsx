@@ -1,8 +1,14 @@
-import Home from "./pages/Home";
+import { useEffect } from "react";
+import Home from "./pages/Home.jsx";
+import getCurrentUser from "./features/getCurrentUser.js";
 
 function App() {
-  
-
+  useEffect(()=>{
+    const getUser = async()=>{
+      await getCurrentUser()
+    }
+    getUser()
+  },[])
   return (
     <>
      <Home/>
@@ -10,4 +16,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
