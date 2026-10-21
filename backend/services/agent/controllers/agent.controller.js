@@ -1,5 +1,5 @@
 import axios from "axios";
-import { graph } from "../graph/graph";
+import { graph } from "../graph/graph.js";
 
 export const agent = async (req,res) =>{
     try {
