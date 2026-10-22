@@ -1,8 +1,32 @@
+import { useEffect } from "react";
+import ChatInput from "./ChatInput.jsx";
+import MessageList from "./MessageList.jsx";
+import Nav from "./Nav.jsx";
+import { useDispatch, useSelector } from "react-redux";
+import getMessages from "../features/getMessages.js";
+import { setMessages } from "../redux/messageSlice.js";
 
 function ChatArea(){
+
+  const {selectedConversation } = useSelector(state => state.conversation)
+  const dispatch = useDispatch()
+  useEffect(()=>{
+    const getMesg = async()=>{
+      if(selectedConversation){
+        const data = await getMessages(selectedConversation?._id)
+        dispatch(setMessages(data))
+      }
+    }
+
+    getMesg()
+  },[selectedConversation])
+  
+  
   return (
     <div className="flex-1 flex flex-col">
-        ChatArea
+        <Nav/>
+        <MessageList/>
+        <ChatInput/>
     </div>
   )
 }
