@@ -11,14 +11,14 @@ function ChatArea(){
   const {selectedConversation } = useSelector(state => state.conversation)
   const dispatch = useDispatch()
   useEffect(()=>{
-    const getMesg = async()=>{
+    const getMesg = async() => {
       if(selectedConversation){
         const data = await getMessages(selectedConversation?._id)
         dispatch(setMessages(data))
       }
     }
 
-    getMesg()
+    getMesg() 
   },[selectedConversation])
   
   

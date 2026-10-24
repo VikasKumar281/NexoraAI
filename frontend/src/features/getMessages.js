@@ -12,4 +12,4 @@ async function getMessages(id){
     }
 }
 
-export default getMessages;
+export default getMessages
