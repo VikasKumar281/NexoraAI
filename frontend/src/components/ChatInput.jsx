@@ -29,6 +29,7 @@ function ChatInput() {
   // const {messages} = useSelector(state => state.message)
   const dispatch = useDispatch();
 
+
   const handleSendMessage = async () => {
     let conversation = selectedConversation;
     if (!conversation) {
@@ -37,6 +38,7 @@ function ChatInput() {
       dispatch(addConversation(conv));
       conversation = conv;
     }
+
 
     if (conversation.title == "New Chat") {
       await updateConversation({ id: conversation?._id, title: value.trim() });
@@ -48,16 +50,18 @@ function ChatInput() {
       );
     }
 
+
     const payload = {
       prompt: value.trim(),
       conversationId: conversation?._id,
-    };
+      agent:selectedAgent.toLowerCase()
+    }; 
 
     dispatch(addMessage({ role: "user", content: value.trim() }));
     setValue("");
 
     const data = await sendMessage(payload);
-    dispatch(addMessage({ role: "assistant", content: data }));
+    dispatch(addMessage({ role: "assistant", content: data.answer, images:data.images }));
     // console.log(data)
   };
 
@@ -108,6 +112,7 @@ function ChatInput() {
             const Icon = agent.icon;
             return (
               <div
+                key={agent.id}
                 onClick={() => setSelectedAgent(agent.label)}
                 className={`
                   shrink-0
