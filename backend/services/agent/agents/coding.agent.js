@@ -45,6 +45,17 @@ export const codingAgent = async (state) => {
         - Beautiful spacing
         - Single page unless user asks otherwise.
 
+        IMAGES
+        ========================
+
+        - Use direct, valid image URLs from images.unsplash.com only.
+        - Never use images.unsplash.com URLs with invalid photo IDs.
+        - Use this format:
+          https://images.unsplash.com/photo-VALID_ID
+        - Prefer well-known, verified image URLs.
+        - Add descriptive alt text to every image.
+        - Never use localhost image paths or missing local files.
+
         Return ONLY valid JSON.
 
         Schema:
@@ -91,7 +102,8 @@ export const codingAgent = async (state) => {
             {
                 id:Date.now(),
                 type:"Project",
-                files:data.files || [] 
+                files:data.files || [],
+                title:state.prompt 
             }
         ]
     }
