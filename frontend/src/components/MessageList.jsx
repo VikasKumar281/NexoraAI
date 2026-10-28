@@ -47,4 +47,4 @@ function MessageList (){
   )
 }
 
-export default MessageList
+export default MessageList;

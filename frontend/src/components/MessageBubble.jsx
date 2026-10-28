@@ -19,7 +19,8 @@ function MessageBubble({role, content, images}){
     }, 2000);
   }
   
-  
+  // console.log("MESSAGE CONTENT:", content);
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div className={`w-fit max-w-[92vw] md:max-w-[72%] px-4 py-2.5 rounded-2xl wrap-break-word overflow-hidden leading-relaxed ${
@@ -43,7 +44,7 @@ function MessageBubble({role, content, images}){
               ))}
           </div>
         )}
-
+        
         <Markdown 
           remarkPlugins={[remarkGfm]}
           components={{
@@ -138,7 +139,24 @@ function MessageBubble({role, content, images}){
                 </div>
               )
 
-            },        
+            },
+            
+          img:({src}) =>{
+            if(!src){
+              return null;
+            }
+            return (
+              <img
+                src={src}
+                onClick={() => setLightBox(src)}
+                loading="lazy"
+                onError={(e) => e.currentTarget.remove()}
+                className="w-40 h-28 rounded-xl object-cover border border-white/10 cursor-zoom-in 
+                hover:opacity-90 transition"
+              />
+            )
+          } 
+
           }}
         >
           {content}
