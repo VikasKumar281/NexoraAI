@@ -44,18 +44,21 @@ export const visionAgent = async(state) =>{
 
         await uploadToS3(filename,buffer,"image/png")
 
-        const downloadUrl = await getFromS3(filename, 24*60*60)
+
+        const downloadUrl = await getFromS3(filename, 10 * 60);
+
+        const aiResponse = [
+        `![Generated Image](${downloadUrl})`,
+        "",
+        `[📩 Download Image](${downloadUrl})`,
+        "",
+        "⏳ Link expires in 10 minutes."
+        ].join("\n");
 
         return {
-            ...state,
-            aiResponse:`
-                ![Generated Image](${downloadUrl})
-
-                📩 [Download Image](${downloadUrl})
-
-                ⏳ Link expires in 10 minutes.
-            `
-        }
+        ...state,
+        aiResponse
+        };
     } 
     catch (error) {
         return {
