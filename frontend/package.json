@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1158.0",
     "@monaco-editor/react": "^4.7.0",
     "@reduxjs/toolkit": "^2.13.0",
     "@tailwindcss/vite": "^4.3.3",
