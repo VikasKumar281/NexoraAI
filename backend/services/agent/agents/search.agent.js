@@ -5,7 +5,7 @@ export const searchAgent = async(state) =>{
        const results = await searchTool.invoke({
             query:state.prompt
        })
-       console.log(results)
+      //  console.log(results)
        return {
         ...state,
         searchResults:results,
