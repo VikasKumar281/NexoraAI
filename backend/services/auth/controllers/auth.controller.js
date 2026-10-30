@@ -22,11 +22,18 @@ export const login = async (req, res) =>{
         }
 
         const sessionId = randomUUID();
+       
+        await redis.set(`user-session-${user?._id}`,sessionId, "EX", 7*24*60*60)
+       
         await redis.set(`session-${sessionId}`, JSON.stringify({
             userId:user._id,
             name:user.name,
             email:user.email,
-            avatar:user.avatar
+            avatar:user.avatar,
+            plan:user.plan,
+            credits:user.credits,
+            totalCredits:user.totalCredits,
+            planExpiresAt:user.planExpiresAt
         }), "EX", 7*24*60*60)
 
         res.cookie("session", sessionId, {
@@ -74,7 +81,7 @@ export const updateUserPayment = async(req, res)=>{
 
         await user.save();
 
-        const sessionId = req.cookies?.session
+        const sessionId = await redis.get(`user-session-${user?._id}`)
         await redis.set(`session-${sessionId}`, JSON.stringify({
             userId:user._id,
             name:user.name,
@@ -86,7 +93,7 @@ export const updateUserPayment = async(req, res)=>{
             planExpiresAt:user.planExpiresAt
         }), "EX", 7 * 24 * 60*60)
 
-        return res.status(200).json({message: "User not found"})
+        return res.status(200).json({success:true})
 
     } catch (error) {
         return res.status(500).json({message: `update user paymennt error ${error}`})
