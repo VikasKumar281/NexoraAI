@@ -75,7 +75,8 @@ export const updateUserPayment = async(req, res)=>{
         }
 
         user.plan = plan
-        user.credits = credits
+        // user.credits = credits
+        user.credits = (user.credits || 0) + credits;
         user.totalCredits += credits
         user.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
@@ -97,5 +98,55 @@ export const updateUserPayment = async(req, res)=>{
 
     } catch (error) {
         return res.status(500).json({message: `update user paymennt error ${error}`})
+    }
+}
+
+
+
+export const deductCredits = async (req, res) => {
+    try{
+        const { userId, agent } = req.body;
+
+        const COST = {
+        chat: 1,
+        search: 5,
+        coding: 10,
+        pdf: 10,
+        ppt: 10,
+        vision: 10
+        };
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(400).json({ message: "user not found" });
+        }
+
+        const requiredCredits = COST[agent] || 1;
+
+        if (user.credits < requiredCredits) {
+            return res.status(400).json({ message: "Not enough credits." });
+        }
+
+        user.credits -= requiredCredits;
+        await user.save();
+
+        const sessionId = await redis.get(`user-session-${user?._id}`)
+        console.log("sessionId", sessionId)
+        await redis.set(`session-${sessionId}`, JSON.stringify({
+            userId:user._id,
+            name:user.name,
+            email:user.email,
+            avatar:user.avatar,
+            plan:user.plan,
+            credits:user.credits,
+            totalCredits:user.totalCredits,
+            planExpiresAt:user.planExpiresAt
+        }), "EX", 7 * 24 * 60*60)
+
+        return res.status(200).json({success:true, credits: user.credits})
+    }
+    catch(error){
+        return res.status(500).json({message: `Deduct credits error ${error}`})
     }
 }

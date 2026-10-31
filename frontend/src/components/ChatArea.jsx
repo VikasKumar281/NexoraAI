@@ -17,7 +17,7 @@ function ChatArea(){
           return;
         }
         const data = await getMessages(selectedConversation?._id)
-        console.log(data)
+        // console.log(data)
 
         dispatch(setMessages(data))
 

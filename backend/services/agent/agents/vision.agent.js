@@ -2,6 +2,7 @@ import axios from "axios";
 import { getModel } from "../config/llmModels.js";
 import { uploadToS3 } from "../utils/uploadToS3.js";
 import { getFromS3 } from "../utils/getFromS3.js";
+import { deductCredits } from "../utils/deductCredits.js";
 
 export const visionAgent = async(state) =>{
     try {
@@ -38,6 +39,7 @@ export const visionAgent = async(state) =>{
         
         const imageRes = await axios.get(imageUrl,{responseType:"arraybuffer"})
         // console.log(imageRes);
+        await deductCredits(state.userId, "vision")
 
         const buffer = Buffer.from(imageRes.data)
         const filename = `image-${Date.now()}.png`
