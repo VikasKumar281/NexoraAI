@@ -73,7 +73,7 @@ function SideBar() {
 
             return (
               <div
-                key={conv._id || i}
+                key={i}
                 onClick={() => dispatch(setSelectedConversation(conv))}
                 className={`flex items-center gap-2.5 cursor-pointer mb-0.5 px-3 py-2.5 rounded-[10px] border transition-colors duration-150 ${
                   isActive
