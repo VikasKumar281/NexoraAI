@@ -2,12 +2,10 @@ import { Crown, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { createOrder } from "../features/createOrder.js";
 import { verifyPayment } from "../features/verifyPayment.js";
-import { useDispatch, useSelector } from "react-redux";
-import { setUserdata } from "../redux/userSlice.js";
-import getCurrentUser from "../features/getCurrentUser.js";
+import {  useSelector } from "react-redux";
+
 
 function BillingDrawer({ open, onClose }) {
-  const dispatch = useDispatch();
   const { userData } = useSelector((state) => state.user);
 
   const handleUpgrade = async (plan) => {
@@ -21,34 +19,17 @@ function BillingDrawer({ open, onClose }) {
         description: `${data?.plan?.name} Plan`,
         order_id: data?.order?.id,
         handler: async (response) => {
-          // console.log(response);
-
           try {
             const data = await verifyPayment(response);
             console.log(data);
 
-            const updatedUser = await getCurrentUser();
-
-            if (updatedUser) {
-              dispatch(setUserdata(updatedUser));
-              onClose();
-              console.log("User plan updated successfully!");
-            }
           } catch (error) {
-            console.error(
-              "Payment Verification Error:",
-              error.response?.data || error.message,
-            );
+                console.log(error);
           }
-        },
-        modal: {
-            ondismiss: () => {
-                console.log("Payment window closed");
-            },
         },
         theme: {
           color: "#4F46E5",
-        },
+        }
       };
 
       const razorpay = new window.Razorpay(options);
