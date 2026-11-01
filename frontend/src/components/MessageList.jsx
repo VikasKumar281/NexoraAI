@@ -4,7 +4,7 @@ import LoadingAnimation from "./LoadingAnimation.jsx";
 
 function MessageList (){
   const {selectedConversation} = useSelector(state => state.conversation)
-  const {messages} = useSelector(state => state.message)
+  const {messages, isLoading} = useSelector(state => state.message)
 
 
   return (
@@ -43,7 +43,7 @@ function MessageList (){
           </div>
         ))}
 
-        <LoadingAnimation/>
+        {isLoading &&  <LoadingAnimation/> }
       </div>
     }
     </div>
