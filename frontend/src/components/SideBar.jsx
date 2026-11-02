@@ -248,7 +248,7 @@ function SideBar() {
                     {userData?.name || "user"}
                   </p>
                   <p className="text-[11px] text-slate-600 mt-px">
-                    {`${(userData?.plan || "free").charAt(0).toUpperCase()}${(userData?.plan || "free").slice(1)} Plan`}
+                    {`${userData?.plan}` || "free"}
                   </p>
                 </div>
 
