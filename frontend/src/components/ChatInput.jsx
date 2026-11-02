@@ -195,6 +195,15 @@ function ChatInput() {
         <textarea
           placeholder="Ask Anything..."
           onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+
+              if (!isLoading && (value.trim() || selectedFile)) {
+                handleSendMessage();
+              }
+            }
+          }}
           value={value}
           className="w-full bg-transparent outline-none resize-none text-[14px] text-slate-200 placeholder:text-slate-600 leading-relaxed scrollbar:none [&::-webkit-scrollbar]:hidden disabled:opacity-50"
           rows={2}

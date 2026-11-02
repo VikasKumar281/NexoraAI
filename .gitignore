@@ -7,7 +7,6 @@ node_modules/
 .env
 .env.*
 !.env.example
-atlas-credentials.env
 *credentials*.env
 
 **/serviceAccountKey.json
