@@ -12,6 +12,7 @@
   "type": "module",
   "description": "",
   "dependencies": {
+    "cors": "^2.8.6",
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
     "firebase-admin": "^14.5.0",
