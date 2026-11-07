@@ -17,8 +17,11 @@ const port = process.env.PORT
 const app = express()
 
 app.use(cors({
-    origin:process.env.FRONTEND_URL,
-    credentials:true
+    origin: "https://d3iiwisdl9f36.cloudfront.net",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 204
 }));
 
 app.use(morgan("dev"));
