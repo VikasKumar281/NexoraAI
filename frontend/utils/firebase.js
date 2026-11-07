@@ -7,7 +7,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_APT_KEY,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "nexoraai-dbc68.firebaseapp.com",
   projectId: "nexoraai-dbc68",
   storageBucket: "nexoraai-dbc68.firebasestorage.app",
