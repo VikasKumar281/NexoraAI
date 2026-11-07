@@ -25,7 +25,7 @@ app.use((err, req, res, next)=>{
 })
 
 app.get("/",(req,res)=>{
-    res.json({message:"Hello from agen"})
+    res.json({message:"Hello from agent"})
 })
 
 
