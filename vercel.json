@@ -1,0 +1,70 @@
+
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "gateway": {
+      "root": "backend/gateway",
+      "framework": "express",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "auth",
+          "format": "url",
+          "env": "AUTH_SERVICE"
+        },
+        {
+          "type": "service",
+          "service": "chat",
+          "format": "url",
+          "env": "CHAT_SERVICE"
+        },
+        {
+          "type": "service",
+          "service": "agent",
+          "format": "url",
+          "env": "AGENT_SERVICE"
+        },
+        {
+          "type": "service",
+          "service": "billing",
+          "format": "url",
+          "env": "BILLING_SERVICE"
+        }
+      ]
+    },
+    "agent": {
+      "root": "backend/services/agent",
+      "framework": "express"
+    },
+    "auth": {
+      "root": "backend/services/auth",
+      "framework": "express"
+    },
+    "billing": {
+      "root": "backend/services/billing",
+      "framework": "express"
+    },
+    "chat": {
+      "root": "backend/services/chat",
+      "framework": "express"
+    },
+    "frontend": {
+      "root": "frontend",
+      "framework": "vite"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "gateway"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
+  ]
+}

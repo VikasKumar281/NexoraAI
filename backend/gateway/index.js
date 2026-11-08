@@ -11,13 +11,14 @@ import morgan from "morgan";
 dotenv.config()
 
 
-const port = process.env.PORT
+// const port = process.env.PORT
 
 
 const app = express()
 
 app.use(cors({
-    origin: "https://d3iiwisdl9f36.cloudfront.net",
+    // origin: "https://d3iiwisdl9f36.cloudfront.net",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -39,6 +40,17 @@ app.get("/",(req,res)=>{
     res.json({message:"Hello from gateway v5"})
 })
 
-app.listen(port,()=>{
-    console.log(`gateway started at ${port}`)
-})
+// app.listen(port,()=>{
+//     console.log(`gateway started at ${port}`)
+// })
+
+
+if (process.env.NODE_ENV !== "production") {
+    const port = process.env.PORT || 8000;
+
+    app.listen(port, () => {
+        console.log(`Gateway started at ${port}`);
+    });
+}
+
+export default app;
