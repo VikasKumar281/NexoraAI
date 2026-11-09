@@ -4,6 +4,7 @@
     "gateway": {
       "root": "backend/gateway",
       "framework": "express",
+      "entrypoint": "dist/index.js",
       "installCommand": "npm install",
       "buildCommand": "npm run build",
       "bindings": [
@@ -16,24 +17,28 @@
     "agent": {
       "root": "backend/services/agent",
       "framework": "express",
+      "entrypoint": "dist/index.js",
       "installCommand": "npm install",
       "buildCommand": "npm run build"
     },
     "auth": {
       "root": "backend/services/auth",
       "framework": "express",
+      "entrypoint": "dist/index.js",
       "installCommand": "npm install",
       "buildCommand": "npm run build"
     },
     "billing": {
       "root": "backend/services/billing",
       "framework": "express",
+      "entrypoint": "dist/index.js",
       "installCommand": "npm install",
       "buildCommand": "npm run build"
     },
     "chat": {
       "root": "backend/services/chat",
       "framework": "express",
+      "entrypoint": "dist/index.js",
       "installCommand": "npm install",
       "buildCommand": "npm run build"
     },
