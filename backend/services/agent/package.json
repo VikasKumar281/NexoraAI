@@ -4,12 +4,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "start": "node index.js"
+    "build": "esbuild index.js --bundle --platform=node --format=esm --packages=external --outfile=dist/index.js",
+    "start": "node dist/index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "type": "module",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1158.0",
@@ -29,9 +26,12 @@
     "ioredis": "^6.0.0",
     "mongoose": "^9.11.2",
     "multer": "^2.5.0",
-    "nodemon": "^3.1.14",
     "pdf-parse": "^2.4.5",
     "pdfkit": "^0.20.2",
     "pptxgenjs": "^4.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "nodemon": "^3.1.14"
   }
 }

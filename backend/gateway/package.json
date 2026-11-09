@@ -4,13 +4,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "start": "node index.js"
+    "build": "esbuild index.js --bundle --platform=node --format=esm --packages=external --outfile=dist/index.js",
+    "start": "node dist/index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "module",
-  "description": "",
   "dependencies": {
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -18,7 +15,10 @@
     "express": "^5.3.0",
     "express-http-proxy": "^2.1.2",
     "ioredis": "^6.0.0",
-    "morgan": "^1.12.1",
+    "morgan": "^1.12.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
     "nodemon": "^3.1.14"
   }
 }

@@ -2,7 +2,7 @@ import {getAuth} from "firebase-admin/auth"
 import { app } from "../config/firebase.js"
 import User from "../models/user.model.js";
 import { randomUUID } from "node:crypto";
-import redis from "../../../shared/redis/redis.js";
+import redis from "../../../shared/redis/redis.mjs";
 
 export const login = async (req, res) =>{
     try{

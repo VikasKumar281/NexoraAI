@@ -4,20 +4,20 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "start": "node index.js"
+    "build": "esbuild index.js --bundle --platform=node --format=esm --packages=external --outfile=dist/index.js",
+    "start": "node dist/index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "module",
-  "description": "",
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
     "firebase-admin": "^14.5.0",
     "ioredis": "^6.0.0",
-    "mongoose": "^9.11.2",
+    "mongoose": "^9.11.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
     "nodemon": "^3.1.14"
   }
 }
