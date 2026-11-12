@@ -1,8 +1,9 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import multer from "multer";
 
-const uploadDir = path.resolve("./temp");
+const uploadDir = process.env.UPLOAD_DIR || path.join(os.tmpdir(), "nexora-uploads");
 // console.log(uploadDir)
 
 if (!fs.existsSync(uploadDir)) {

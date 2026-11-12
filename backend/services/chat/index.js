@@ -45,7 +45,7 @@ app.get("/",(req,res)=>{
 
 
 
-if (process.env.NODE_ENV !== "production") {
+if (!process.env.VERCEL) {
     const port = process.env.PORT || 8002;
 
     app.listen(port, async () => {

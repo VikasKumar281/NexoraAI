@@ -1,7 +1,8 @@
 import axios from "axios";
 import { getModel } from "../config/llmModels.js";
-import { uploadToS3 } from "../utils/uploadToS3.js";
-import { getFromS3 } from "../utils/getFromS3.js";
+// import { uploadToS3 } from "../utils/uploadToS3.js";
+// import { getFromS3 } from "../utils/getFromS3.js";
+import { saveGeneratedFile } from "../utils/saveGeneratedFile.js";
 import { deductCredits } from "../utils/deductCredits.js";
 import { checkAgentLimit } from "../config/agentlimit.js";
 
@@ -47,10 +48,9 @@ export const visionAgent = async(state) =>{
         const buffer = Buffer.from(imageRes.data)
         const filename = `image-${Date.now()}.png`
 
-        await uploadToS3(filename,buffer,"image/png")
-
-
-        const downloadUrl = await getFromS3(filename, 10 * 60);
+        // await uploadToS3(filename,buffer,"image/png")
+        // const downloadUrl = await getFromS3(filename, 10 * 60);
+        const downloadUrl = await saveGeneratedFile(filename, buffer, "image/png", 10 * 60);
 
         const aiResponse = [
         `![Generated Image](${downloadUrl})`,
