@@ -13,7 +13,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend
+    buildCommand: npm install --omit=dev --prefix backend && npm install --include=dev --prefix frontend && npm run build --prefix frontend
     startCommand: node backend/server.js
     healthCheckPath: /health
     envVars:
