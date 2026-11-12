@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { connection } from "../config/db.js";
 
 
 const userSchema=new mongoose.Schema({
@@ -26,6 +27,6 @@ const userSchema=new mongoose.Schema({
     timestamps:true
 });
 
-const User = mongoose.model("User", userSchema);
+const User = connection.model("User", userSchema);
 
 export default User;

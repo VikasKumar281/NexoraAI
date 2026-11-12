@@ -6,7 +6,10 @@ import morgan from "morgan";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import connectDb from "./services/auth/config/db.js";
+import connectAuthDb from "./services/auth/config/db.js";
+import connectChatDb from "./services/chat/config/db.js";
+import connectBillingDb from "./services/billing/config/db.js";
+import connectAgentDb from "./services/agent/config/db.js";
 import protect from "./gateway/middleware/auth.middleware.js";
 import { getCurrentUser } from "./gateway/controllers/user.controller.js";
 import authRouter from "./services/auth/routes/auth.route.js";
@@ -48,7 +51,12 @@ function attachUser(req, _res, next) {
 
 app.use("/api", async (req, res, next) => {
     try {
-        await connectDb();
+        await Promise.all([
+            connectAuthDb(),
+            connectChatDb(),
+            connectBillingDb(),
+            connectAgentDb(),
+        ]);
         next();
     } catch (error) {
         console.error("Database connection failed:", error);

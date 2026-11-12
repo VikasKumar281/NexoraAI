@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { connection } from "../config/db.js";
 
 const paymentSchema = new mongoose.Schema({
     userId:{
@@ -29,5 +30,5 @@ const paymentSchema = new mongoose.Schema({
 },{timestamps:true})
 
 
-const Payment = mongoose.model("Payment", paymentSchema)
+const Payment = connection.model("Payment", paymentSchema)
 export default Payment;

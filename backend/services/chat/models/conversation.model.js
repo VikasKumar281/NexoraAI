@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { connection } from "../config/db.js";
 
 const conversationSchema = new mongoose.Schema({
     title:{
@@ -13,5 +14,5 @@ const conversationSchema = new mongoose.Schema({
 })
 
 
-const Conversation = mongoose.model("Conversation", conversationSchema);
+const Conversation = connection.model("Conversation", conversationSchema);
 export default Conversation;

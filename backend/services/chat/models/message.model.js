@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { connection } from "../config/db.js";
 
 const fileSchema = new mongoose.Schema({
     name:String,
@@ -34,5 +35,5 @@ const messageSchema = new mongoose.Schema({
 })
 
 
-const Message = mongoose.model("Message", messageSchema);
+const Message = connection.model("Message", messageSchema);
 export default Message;

@@ -26,7 +26,13 @@ services:
           name: nexora-redis
           type: keyvalue
           property: connectionString
-      - key: MONGODB_URI
+      - key: AUTH_MONGODB_URI
+        sync: false
+      - key: CHAT_MONGODB_URI
+        sync: false
+      - key: BILLING_MONGODB_URI
+        sync: false
+      - key: AGENT_MONGODB_URI
         sync: false
       - key: FIREBASE_SERVICE_ACCOUNT
         sync: false

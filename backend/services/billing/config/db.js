@@ -18,39 +18,9 @@
 
 
 
-import mongoose from "mongoose";
+import { createServiceDb } from "../../../shared/mongo.js";
 
-let cached = global.mongoose;
+const db = createServiceDb("nexoraBillingDb", "BILLING_MONGODB_URI", "billing");
 
-if (!cached) {
-    cached = global.mongoose = {
-        conn: null,
-        promise: null
-    };
-}
-
-const connectDb = async () => {
-    if (cached.conn) {
-        return cached.conn;
-    }
-
-    if (!cached.promise) {
-        cached.promise = mongoose.connect(process.env.MONGODB_URI, {
-            bufferCommands: false,
-        })
-        .then((mongooseInstance) => {
-            console.log("MongoDB connected successfully");
-            return mongooseInstance;
-        })
-        .catch((error) => {
-            cached.promise = null;
-            console.error("MongoDB connection error:", error);
-            throw error;
-        });
-    }
-
-    cached.conn = await cached.promise;
-    return cached.conn;
-};
-
-export default connectDb;
+export const connection = db.connection;
+export default db.connectDb;
