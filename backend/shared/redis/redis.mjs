@@ -15,6 +15,7 @@ let client = null;
 
 function createClient() {
   const instance = new Redis(process.env.REDIS_URL, {
+    family: 0,
     maxRetriesPerRequest: 2,
     retryStrategy: (times) => Math.min(times * 200, 3000),
     reconnectOnError: (err) => err.message.includes("READONLY"),

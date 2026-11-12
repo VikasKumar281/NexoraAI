@@ -110,7 +110,7 @@ app.use((error, _req, res, next) => {
 
 if (!process.env.VERCEL) {
     const port = process.env.PORT || 8000;
-    app.listen(port, () => {
+    app.listen(port, "0.0.0.0", () => {
         console.log(`NexoraAI listening on ${port}`);
     });
 }
