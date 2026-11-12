@@ -5,7 +5,8 @@ const messageSlice = createSlice({
     initialState:{
         messages:[],
         artifacts:[],
-        isLoading:false
+        isLoading:false,
+        draftPrompt:null
     },
     reducers:{
         setMessages:(state, action)=>{
@@ -19,9 +20,12 @@ const messageSlice = createSlice({
         },
         setIsLoading:(state, action)=>{
             state.isLoading = action.payload
+        },
+        setDraftPrompt:(state, action)=>{
+            state.draftPrompt = action.payload
         },          
     }
 })
 
-export const {setMessages, addMessage, setArtifacts, setIsLoading} = messageSlice.actions;
+export const {setMessages, addMessage, setArtifacts, setIsLoading, setDraftPrompt} = messageSlice.actions;
 export default messageSlice.reducer;

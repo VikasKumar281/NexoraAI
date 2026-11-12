@@ -25,7 +25,7 @@ export const getConversations = async(req, res) =>{
         console.log("userId", userId)
         const conversations = await Conversation.find({
             userId:userId
-        }).sort({updatedAt:-1})
+        }).sort({pinned:-1, pinnedAt:-1, updatedAt:-1})
         
         return res.status(200).json(conversations)
     } 
@@ -39,10 +39,34 @@ export const getConversations = async(req, res) =>{
 
 export const updateConversation = async(req, res) =>{
     try {
-        const {id, title} = req.body
-        const conversation = await Conversation.findByIdAndUpdate(id, {
-            title
-        })
+        const userId = req.headers["x-user-id"]
+        const {id, title, pinned, archived} = req.body
+        const update = {}
+
+        if (typeof title === "string" && title.trim()) {
+            update.title = title.trim().slice(0, 80)
+        }
+        if (typeof pinned === "boolean") {
+            update.pinned = pinned
+            update.pinnedAt = pinned ? new Date() : null
+        }
+        if (typeof archived === "boolean") {
+            update.archived = archived
+            if (archived) {
+                update.pinned = false
+                update.pinnedAt = null
+            }
+        }
+
+        const conversation = await Conversation.findOneAndUpdate(
+            { _id: id, userId },
+            update,
+            { new: true }
+        )
+
+        if (!conversation) {
+            return res.status(404).json({message:"Conversation not found"})
+        }
         
         return res.status(200).json(conversation)
     } 
@@ -65,6 +89,12 @@ export const saveMessage = async (req, res) =>{
             artifacts
         })
 
+        if (conversationId) {
+            await Conversation.findByIdAndUpdate(conversationId, {
+                $currentDate: { updatedAt: true }
+            })
+        }
+
         return res.status(200).json(message)
     } 
     catch (error) {
@@ -72,6 +102,30 @@ export const saveMessage = async (req, res) =>{
     }
 }
 
+
+
+
+export const deleteConversation = async (req, res) => {
+    try {
+        const userId = req.headers["x-user-id"]
+        const conversation = await Conversation.findOne({
+            _id: req.params.id,
+            userId
+        })
+
+        if (!conversation) {
+            return res.status(404).json({ message: "Conversation not found" })
+        }
+
+        await Message.deleteMany({ conversationId: conversation._id })
+        await conversation.deleteOne()
+
+        return res.status(200).json({ success: true })
+    }
+    catch (error) {
+        return res.status(500).json({ message: `delete conversation error ${error}` })
+    }
+}
 
 
 

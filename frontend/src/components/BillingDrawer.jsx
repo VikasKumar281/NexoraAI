@@ -2,14 +2,20 @@ import { Crown, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { createOrder } from "../features/createOrder.js";
 import { verifyPayment } from "../features/verifyPayment.js";
-import {  useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import getCurrentUser, { applySession } from "../features/getCurrentUser.js";
+import { setUserdata } from "../redux/userSlice.js";
+import { useState } from "react";
 
 
 function BillingDrawer({ open, onClose }) {
   const { userData } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const [notice, setNotice] = useState("");
 
   const handleUpgrade = async (plan) => {
     try {
+      setNotice("");
       const data = await createOrder(plan);
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -20,11 +26,15 @@ function BillingDrawer({ open, onClose }) {
         order_id: data?.order?.id,
         handler: async (response) => {
           try {
-            const data = await verifyPayment(response);
-            console.log(data);
-
+            await verifyPayment(response);
+            const session = await getCurrentUser();
+            if (session) {
+              dispatch(setUserdata(applySession(userData, session)));
+            }
+            setNotice("Payment successful. Your plan and credits are updated.");
           } catch (error) {
                 console.log(error);
+                setNotice("Payment could not be verified.");
           }
         },
         theme: {
@@ -106,6 +116,10 @@ function BillingDrawer({ open, onClose }) {
                   </div>
                 </div>
               </div>
+
+              {notice && (
+                <p className="mt-4 text-sm text-emerald-400">{notice}</p>
+              )}
             </div>
 
             <div>

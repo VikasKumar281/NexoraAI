@@ -1,9 +1,11 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import MessageBubble from "./MessageBubble.jsx";
 import LoadingAnimation from "./LoadingAnimation.jsx";
 import { useEffect, useRef } from "react";
+import { setDraftPrompt } from "../redux/messageSlice.js";
 
 function MessageList (){
+  const dispatch = useDispatch()
   const {selectedConversation} = useSelector(state => state.conversation)
   const {messages, isLoading} = useSelector(state => state.message)
   const bottomRef = useRef(null)
@@ -38,6 +40,7 @@ function MessageList (){
             <div className="flex flex-wrap justify-center gap-2 mt-1">
               {["Write a Netflix clone", "Explain Redis", "Build a dashboard"].map((s) => (
                 <button key={s}
+                  onClick={() => dispatch(setDraftPrompt(s))}
                   className="text-[12px] text-slate-400 bg-white/4 border border-white/[0.07] px-3 py-1.5 rounded-lg hover:bg-white/8 hover:text-slate-200 transition-colors duration-150 cursor-pointer"
                 >
                   {s}

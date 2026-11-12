@@ -11,23 +11,26 @@ function ChatArea(){
   const {selectedConversation } = useSelector(state => state.conversation)
   const dispatch = useDispatch()
   useEffect(()=>{
-    const getMesg = async() => {
-      if(selectedConversation){
-        if(selectedConversation.title == "New Chat"){
-          return;
-        }
-        const data = await getMessages(selectedConversation?._id)
-        // console.log(data)
-
-        dispatch(setMessages(data))
-
-        const latestArtifactMessage = [...data].reverse().find(msg => msg.artifacts && msg.artifacts.length > 0)
-        dispatch(setArtifacts(latestArtifactMessage?.artifacts || []))
+    const getMesg = async () => {
+      if (!selectedConversation) {
+        dispatch(setMessages([]))
+        dispatch(setArtifacts([]))
+        return
       }
+
+      if (selectedConversation.localOnly) {
+        return
+      }
+
+      const data = await getMessages(selectedConversation?._id)
+      dispatch(setMessages(data || []))
+
+      const latestArtifactMessage = [...(data || [])].reverse().find(msg => msg.artifacts && msg.artifacts.length > 0)
+      dispatch(setArtifacts(latestArtifactMessage?.artifacts || []))
     }
 
     getMesg() 
-  },[selectedConversation?._id])
+  },[selectedConversation?._id, selectedConversation?.localOnly])
   
   
   return (

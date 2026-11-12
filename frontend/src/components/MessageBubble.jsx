@@ -9,7 +9,14 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 function MessageBubble({role, content, images}){
   const isUser = role === "user"
   const [lightBox, setLightBox] = useState(null)
+  const [copiedMessage, setCopiedMessage] = useState(false)
   const [copiedCode, setCopiedCode] = useState("")
+
+  const copyMessage = async () => {
+    await navigator.clipboard.writeText(content || "")
+    setCopiedMessage(true)
+    setTimeout(() => setCopiedMessage(false), 2000)
+  }
 
   const copyCode = async(code) =>{
     await navigator.clipboard.writeText(code)
@@ -161,6 +168,16 @@ function MessageBubble({role, content, images}){
         >
           {content}
         </Markdown>
+
+        {!isUser && content && (
+          <button
+            onClick={copyMessage}
+            className="mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-200 cursor-pointer"
+          >
+            {copiedMessage ? <Check size={13} /> : <Copy size={13} />}
+            {copiedMessage ? "Copied" : "Copy"}
+          </button>
+        )}
 
 
       </div>

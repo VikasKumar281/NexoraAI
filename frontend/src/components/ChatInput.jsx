@@ -18,26 +18,35 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   addMessage,
   setArtifacts,
+  setDraftPrompt,
   setIsLoading,
+  setMessages,
 } from "../redux/messageSlice.js";
 import { createConversation } from "../features/createConversation.js";
 import {
   addConversation,
   setConvTitle,
   setSelectedConversation,
+  touchConversation,
 } from "../redux/conversationSlice.js";
 import { updateConversation } from "../features/updateConversation.js";
+import getCurrentUser, { applySession } from "../features/getCurrentUser.js";
+import { setUserdata } from "../redux/userSlice.js";
 
 function ChatInput() {
   const [value, setValue] = useState("");
   const [selectedAgent, setSelectedAgent] = useState("Auto");
   const { selectedConversation } = useSelector((state) => state.conversation);
-  const { isLoading } = useSelector((state) => state.message);
+  const { isLoading, draftPrompt } = useSelector((state) => state.message);
+  const { userData } = useSelector((state) => state.user);
   const [selectedFile, setSelectedFile] = useState(null);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
   const fileRef = useRef(null);
   const dispatch = useDispatch();
+
+  const baseTextRef = useRef("");
+  const listeningRef = useRef(false);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -46,26 +55,40 @@ function ChatInput() {
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    recognition.lang = navigator.language || "en-IN";
     recognition.interimResults = true;
     recognition.continuous = true;
 
     recognition.onresult = (event) => {
-      let transcript = "";
+      let interimTranscript = "";
 
-      for (
-        let index = event.resultIndex;
-        index < event.results.length;
-        index++
-      ) {
-        transcript += event.results[index][0].transcript;
+      for (let index = event.resultIndex; index < event.results.length; index++) {
+        const transcript = event.results[index][0].transcript;
+        if (event.results[index].isFinal) {
+          baseTextRef.current = `${baseTextRef.current} ${transcript}`.replace(/\s+/g, " ").trim();
+        } else {
+          interimTranscript += transcript;
+        }
       }
 
-      // console.log(transcript)
-      setValue(transcript);
+      setValue(`${baseTextRef.current} ${interimTranscript}`.replace(/\s+/g, " ").trim());
     };
 
     recognition.onend = () => {
+      if (listeningRef.current) {
+        try {
+          recognition.start();
+        } catch {
+          listeningRef.current = false;
+          setListening(false);
+        }
+        return;
+      }
+      setListening(false);
+    };
+
+    recognition.onerror = () => {
+      listeningRef.current = false;
       setListening(false);
     };
 
@@ -74,49 +97,74 @@ function ChatInput() {
 
   const toggleMic = () => {
     if (!recognitionRef.current) {
-      alert("speech recognition not supported");
+      alert("Voice input is not supported in this browser. Use Chrome.");
       return;
     }
 
-    if (listening) {
+    if (listeningRef.current) {
+      listeningRef.current = false;
       recognitionRef.current.stop();
       setListening(false);
-    } else {
+      return;
+    }
+
+    baseTextRef.current = value.trim();
+    listeningRef.current = true;
+    setListening(true);
+    try {
       recognitionRef.current.start();
-      setListening(true);
+    } catch {
+      listeningRef.current = false;
+      setListening(false);
     }
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (promptText) => {
+    const prompt = typeof promptText === "string" ? promptText.trim() : value.trim();
+    if (!prompt && !selectedFile) return;
+    if (listeningRef.current) {
+      listeningRef.current = false;
+      recognitionRef.current?.stop();
+      setListening(false);
+    }
+
     dispatch(setIsLoading(true));
     let conversation = selectedConversation;
     if (!conversation) {
       const conv = await createConversation();
-      dispatch(setSelectedConversation(conv));
+      if (!conv?._id) {
+        dispatch(setIsLoading(false));
+        return;
+      }
+      dispatch(setMessages([]));
+      dispatch(setArtifacts([]));
       dispatch(addConversation(conv));
+      dispatch(setSelectedConversation({ ...conv, localOnly: true }));
       conversation = conv;
+    } else {
+      dispatch(touchConversation(conversation._id));
     }
 
-    if (conversation.title == "New Chat") {
-      await updateConversation({ id: conversation?._id, title: value.trim() });
+    if (conversation.title == "New Chat" && prompt) {
+      const title = prompt.slice(0, 40);
+      await updateConversation({ id: conversation?._id, title });
       dispatch(
         setConvTitle({
           conversationId: conversation?._id,
-          title: value.slice(0, 40),
+          title,
         }),
       );
     }
 
-    // console.log(selectedFile)
     const formData = new FormData();
-    formData.append("prompt", value.trim());
+    formData.append("prompt", prompt);
     formData.append("conversationId", conversation?._id);
     formData.append("agent", selectedAgent.toLowerCase());
     if (selectedFile) {
       formData.append("file", selectedFile);
     }
 
-    dispatch(addMessage({ role: "user", content: value.trim() }));
+    dispatch(addMessage({ role: "user", content: prompt }));
     setValue("");
 
     const data = await sendMessage(formData);
@@ -131,9 +179,21 @@ function ChatInput() {
           images: data?.images,
         }),
       );
+      const session = await getCurrentUser();
+      if (session) {
+        dispatch(setUserdata(applySession(userData, session)));
+      }
     }
-    // console.log(data)
   };
+
+    const sentDraft = useRef("");
+
+  useEffect(() => {
+    if (!draftPrompt || sentDraft.current === draftPrompt) return;
+    sentDraft.current = draftPrompt;
+    dispatch(setDraftPrompt(null));
+    handleSendMessage(draftPrompt);
+  }, [draftPrompt]);
 
   const agents = [
     {
@@ -291,12 +351,15 @@ function ChatInput() {
               onClick={toggleMic}
               className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 cursor-pointer ${
                 listening
-                  ? "bg-red-500 text-white"
+                  ? "bg-red-500 text-white animate-pulse"
                   : "text-slate-600 hover:bg-white/5"
               }`}
             >
               {listening ? <Mic size={16} /> : <MicOff size={16} />}
             </button>
+            {listening && (
+              <span className="text-[11px] text-red-300">Listening... tap the mic to stop</span>
+            )}
           </div>
 
           <button
