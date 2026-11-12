@@ -6,16 +6,27 @@ const messageSlice = createSlice({
         messages:[],
         artifacts:[],
         isLoading:false,
-        draftPrompt:null
+        draftPrompt:null,
+        activeConversationId:null
     },
     reducers:{
+        setActiveConversationId:(state, action)=>{
+            state.activeConversationId = action.payload || null
+        },
         setMessages:(state, action)=>{
             state.messages=action.payload
         },
         addMessage:(state, action)=>{
-            state.messages.push(action.payload)
+            const { conversationId, ...message } = action.payload
+            if (conversationId != state.activeConversationId) return
+            state.messages.push(message)
         },  
         setArtifacts:(state, action)=>{
+            if (action.payload?.scoped) {
+                if (action.payload.conversationId != state.activeConversationId) return
+                state.artifacts = action.payload.artifacts || []
+                return
+            }
             state.artifacts = action.payload
         },
         setIsLoading:(state, action)=>{
@@ -27,5 +38,5 @@ const messageSlice = createSlice({
     }
 })
 
-export const {setMessages, addMessage, setArtifacts, setIsLoading, setDraftPrompt} = messageSlice.actions;
+export const {setMessages, addMessage, setArtifacts, setIsLoading, setDraftPrompt, setActiveConversationId} = messageSlice.actions;
 export default messageSlice.reducer;

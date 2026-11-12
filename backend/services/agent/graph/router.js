@@ -1,5 +1,21 @@
 import { getModel } from "../config/llmModels.js";
 
+function quickAgent(prompt) {
+    const text = String(prompt || "").trim()
+    const lower = text.toLowerCase()
+    if (!lower) return null
+
+    if (/\b(powerpoint|presentation|slides?|ppt)\b/.test(lower)) return "ppt"
+    if (/\b(generate|create|make|write)\b/.test(lower) && /\bpdf\b/.test(lower)) return "pdf"
+    if (/\b(image|picture|photo|logo|illustration)\b/.test(lower) && /\b(generate|create|draw|make|design)\b/.test(lower)) return "vision"
+    if (/\b(latest|news|today|current events|right now|who won|price of|search the web)\b/.test(lower)) return "search"
+    if (/\b(code|debug|javascript|typescript|python|react|function|component|api|bug|algorithm)\b/.test(lower)) return "coding"
+    if (/^(hi|hello|hey|hii|yo|namaste|thanks|thank you|ok|okay|good morning|good evening|good night|kaise ho|kya haal hai)[!.?\s]*$/i.test(text)) {
+        return "chat"
+    }
+    return null
+}
+
 export const router = async(state) =>{
     
     if(state.agent && state.agent !== "auto"){
@@ -26,6 +42,13 @@ export const router = async(state) =>{
         }
     }
 
+    const quick = quickAgent(state.prompt)
+    if (quick) {
+        return {
+            ...state,
+            agent: quick
+        }
+    }
 
     const llm = await getModel("router")
     const prompt = `You are an agent router.

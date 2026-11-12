@@ -4,12 +4,13 @@ import { addMessage } from "../config/memory.js";
 import { saveMessage } from "../../chat/controllers/chat.controller.js";
 import { callHandler } from "../../../shared/callHandler.js";
 
-async function saveChatMessage(body) {
+async function saveChatMessage(body, userId) {
+    const headers = { "x-user-id": userId }
     if (process.env.CHAT_SERVICE) {
-        await axios.post(`${process.env.CHAT_SERVICE}/save-message`, body);
+        await axios.post(`${process.env.CHAT_SERVICE}/save-message`, body, { headers });
         return;
     }
-    await callHandler(saveMessage, { body });
+    await callHandler(saveMessage, { body, headers });
 }
 
 export const agent = async (req,res, next) =>{
@@ -20,12 +21,14 @@ export const agent = async (req,res, next) =>{
         const userId = req.headers["x-user-id"]
 
 
-        await saveChatMessage({
-            conversationId, role:"user", content:prompt
-        })
-        const result = await graph.invoke({
-            prompt,conversationId,agent,userId,file 
-        })
+        const [, result] = await Promise.all([
+            saveChatMessage({
+                conversationId, role:"user", content:prompt
+            }, userId),
+            graph.invoke({
+                prompt,conversationId,agent,userId,file
+            })
+        ])
         console.log("result", result)
         // const response = result.aiResponse
 
@@ -36,7 +39,7 @@ export const agent = async (req,res, next) =>{
 
         await saveChatMessage({
             conversationId, role:"assistant", content:result?.aiResponse,images:result?.images,artifacts:result?.artifacts
-        })
+        }, userId)
 
         return res.status(200).json({
             answer: result?.aiResponse,
@@ -45,6 +48,9 @@ export const agent = async (req,res, next) =>{
         })
     } 
     catch (error) {
+        if (error.status === 404) {
+            return res.status(200).json({ discarded: true })
+        }
         next(error);
     }
 }

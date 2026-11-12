@@ -30,6 +30,7 @@ import { setUserdata } from "../redux/userSlice.js";
 import BillingDrawer from "./BillingDrawer.jsx";
 import { deleteConversation } from "../features/deleteConversation.js";
 import { updateConversation } from "../features/updateConversation.js";
+import { setActiveConversationId, setArtifacts, setIsLoading, setMessages } from "../redux/messageSlice.js";
 
 
 
@@ -82,9 +83,18 @@ function SideBar() {
   const handleDeleteConversation = async (event, id) => {
     event.stopPropagation();
     setMenuId(null);
+    const deletingOpenChat = selectedConversation?._id == id;
+    if (deletingOpenChat) {
+      dispatch(setActiveConversationId(null));
+      dispatch(setArtifacts([]));
+      dispatch(setIsLoading(false));
+    }
     try {
       await deleteConversation(id);
       dispatch(removeConversation(id));
+      if (deletingOpenChat) {
+        dispatch(setMessages([]));
+      }
     } catch (error) {
       console.log(error);
     }

@@ -5,10 +5,10 @@ import {
   ImageIcon,
   MessageSquare,
   Mic,
-  MicOff,
   Paperclip,
   Presentation,
   Send,
+  Square,
   X,
   Zap,
 } from "lucide-react";
@@ -17,6 +17,7 @@ import sendMessage from "../features/sendMessage.js";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addMessage,
+  setActiveConversationId,
   setArtifacts,
   setDraftPrompt,
   setIsLoading,
@@ -25,15 +26,17 @@ import {
 import { createConversation } from "../features/createConversation.js";
 import {
   addConversation,
-  setConvTitle,
+  patchConversation,
   setSelectedConversation,
   touchConversation,
 } from "../redux/conversationSlice.js";
 import { updateConversation } from "../features/updateConversation.js";
+import { makeChatTitle } from "../features/chatTitle.js";
 import getCurrentUser, { applySession } from "../features/getCurrentUser.js";
 import { setUserdata } from "../redux/userSlice.js";
+import { store } from "../redux/store.js";
 
-function ChatInput() {
+function ChatInput({ centered = false }) {
   const [value, setValue] = useState("");
   const [selectedAgent, setSelectedAgent] = useState("Auto");
   const { selectedConversation } = useSelector((state) => state.conversation);
@@ -41,8 +44,11 @@ function ChatInput() {
   const { userData } = useSelector((state) => state.user);
   const [selectedFile, setSelectedFile] = useState(null);
   const [listening, setListening] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const recognitionRef = useRef(null);
   const fileRef = useRef(null);
+  const abortRef = useRef(null);
   const dispatch = useDispatch();
 
   const baseTextRef = useRef("");
@@ -87,17 +93,56 @@ function ChatInput() {
       setListening(false);
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+      if (event.error === "no-speech" || event.error === "aborted") return;
       listeningRef.current = false;
       setListening(false);
+      setVoiceError(
+        event.error === "not-allowed"
+          ? "Microphone permission is blocked in the browser."
+          : "Voice input stopped. Try again.",
+      );
     };
 
     recognitionRef.current = recognition;
   }, []);
 
+  const attachFile = (file) => {
+    if (!file) return;
+    const type = file.type || "";
+    if (!type.startsWith("image/") && type !== "application/pdf") {
+      setVoiceError("Paste a photo or a PDF.");
+      return;
+    }
+    const named = file.name
+      ? file
+      : new File([file], type === "application/pdf" ? "pasted.pdf" : "pasted-image.png", { type });
+    setSelectedFile(named);
+    setVoiceError("");
+  };
+
+  const takeClipboardFile = (clipboard) => {
+    const items = clipboard?.items ? [...clipboard.items] : [];
+    for (const item of items) {
+      if (item.kind !== "file") continue;
+      const file = item.getAsFile();
+      if (file) {
+        attachFile(file);
+        return true;
+      }
+    }
+    const files = clipboard?.files ? [...clipboard.files] : [];
+    if (files[0]) {
+      attachFile(files[0]);
+      return true;
+    }
+    return false;
+  };
+
   const toggleMic = () => {
-    if (!recognitionRef.current) {
-      alert("Voice input is not supported in this browser. Use Chrome.");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition || !recognitionRef.current) {
+      setVoiceError("Voice input works in Chrome or Edge.");
       return;
     }
 
@@ -111,12 +156,18 @@ function ChatInput() {
     baseTextRef.current = value.trim();
     listeningRef.current = true;
     setListening(true);
+    setVoiceError("");
     try {
       recognitionRef.current.start();
     } catch {
       listeningRef.current = false;
       setListening(false);
+      setVoiceError("Allow the microphone, then tap the mic again.");
     }
+  };
+
+  const stopGeneration = () => {
+    abortRef.current?.abort();
   };
 
   const handleSendMessage = async (promptText) => {
@@ -136,24 +187,23 @@ function ChatInput() {
         dispatch(setIsLoading(false));
         return;
       }
+      dispatch(setActiveConversationId(conv._id));
       dispatch(setMessages([]));
       dispatch(setArtifacts([]));
       dispatch(addConversation(conv));
       dispatch(setSelectedConversation({ ...conv, localOnly: true }));
       conversation = conv;
     } else {
+      dispatch(setActiveConversationId(conversation._id));
       dispatch(touchConversation(conversation._id));
     }
 
-    if (conversation.title == "New Chat" && prompt) {
-      const title = prompt.slice(0, 40);
-      await updateConversation({ id: conversation?._id, title });
-      dispatch(
-        setConvTitle({
-          conversationId: conversation?._id,
-          title,
-        }),
-      );
+    const requestId = conversation._id;
+
+    if ((conversation.title == "New Chat" || !conversation.title) && (prompt || selectedFile)) {
+      const title = makeChatTitle(prompt || selectedFile.name.replace(/\.[^.]+$/, ""));
+      dispatch(patchConversation({ id: conversation._id, title }));
+      updateConversation({ id: conversation._id, title });
     }
 
     const formData = new FormData();
@@ -164,25 +214,43 @@ function ChatInput() {
       formData.append("file", selectedFile);
     }
 
-    dispatch(addMessage({ role: "user", content: prompt }));
+    dispatch(addMessage({
+      conversationId: requestId,
+      role: "user",
+      content: prompt,
+      images: selectedFile?.type?.startsWith("image/") ? [URL.createObjectURL(selectedFile)] : [],
+    }));
     setValue("");
 
-    const data = await sendMessage(formData);
-    dispatch(setIsLoading(false));
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const data = await sendMessage(formData, controller.signal);
+    abortRef.current = null;
     setSelectedFile(null);
-    dispatch(setArtifacts(data?.artifacts || []));
-    if (data) {
-      dispatch(
-        addMessage({
-          role: "assistant",
-          content: data?.answer,
-          images: data?.images,
-        }),
-      );
-      const session = await getCurrentUser();
-      if (session) {
-        dispatch(setUserdata(applySession(userData, session)));
-      }
+
+    const current = store.getState();
+    const stillOpen = current.conversation.selectedConversation?._id == requestId
+      && current.message.activeConversationId == requestId;
+    if (!stillOpen) return;
+
+    dispatch(setIsLoading(false));
+    if (!data || data.discarded) return;
+    dispatch(setArtifacts({
+      scoped: true,
+      conversationId: requestId,
+      artifacts: data?.artifacts || [],
+    }));
+    dispatch(
+      addMessage({
+        conversationId: requestId,
+        role: "assistant",
+        content: data?.answer,
+        images: data?.images,
+      }),
+    );
+    const session = await getCurrentUser();
+    if (session && store.getState().conversation.selectedConversation?._id == requestId) {
+      dispatch(setUserdata(applySession(userData, session)));
     }
   };
 
@@ -234,9 +302,24 @@ function ChatInput() {
   ];
 
   return (
-    <div className="w-full overflow-hidden px-3 md:px-5 py-4 border-t border-white/6 bg-[#0d0f14]">
-      <div className="flex flex-col gap-2 bg-white/3 border border-white/[0.07] rounded-2xl px-4 pt-3.5 pb-3">
-        <div className="flex w-[80%] gap-2 pr-2 flex-wrap">
+    <div className={centered ? "w-full" : "w-full px-3 md:px-6 pb-5 pt-2 bg-[#0d0f14]"}>
+      <div
+        onDragOver={(event) => {
+          event.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDragOver(false);
+          const file = event.dataTransfer.files?.[0];
+          if (file) attachFile(file);
+        }}
+        className={`mx-auto flex w-full max-w-3xl flex-col gap-2 rounded-[28px] border bg-[#17181d] px-4 pt-3 pb-2.5 ${
+          dragOver ? "border-indigo-400/70" : "border-white/10"
+        }`}
+      >
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
           {agents.map((agent) => {
             const isActive = selectedAgent === agent.label;
             const Icon = agent.icon;
@@ -308,9 +391,27 @@ function ChatInput() {
           </div>
         )}
 
+        {listening && (
+          <div className="flex items-center gap-2 rounded-xl bg-red-500/10 px-3 py-2 text-[12px] text-red-200">
+            <span className="flex items-end gap-0.5 h-3">
+              {[0, 1, 2, 3].map((bar) => (
+                <span
+                  key={bar}
+                  className="w-0.5 rounded-full bg-red-300 origin-bottom animate-pulse"
+                  style={{ height: `${8 + bar * 2}px`, animationDelay: `${bar * 120}ms` }}
+                />
+              ))}
+            </span>
+            Listening. Speak, then tap the mic to stop.
+          </div>
+        )}
+
         <textarea
-          placeholder="Ask Anything..."
+          placeholder="Ask anything"
           onChange={(e) => setValue(e.target.value)}
+          onPaste={(event) => {
+            if (takeClipboardFile(event.clipboardData)) event.preventDefault();
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -321,9 +422,13 @@ function ChatInput() {
             }
           }}
           value={value}
-          className="w-full bg-transparent outline-none resize-none text-[14px] text-slate-200 placeholder:text-slate-600 leading-relaxed scrollbar:none [&::-webkit-scrollbar]:hidden disabled:opacity-50"
-          rows={2}
+          className="w-full bg-transparent outline-none resize-none text-[15px] text-slate-100 placeholder:text-slate-500 leading-relaxed scrollbar:none [&::-webkit-scrollbar]:hidden disabled:opacity-50"
+          rows={centered ? 2 : 2}
         />
+
+        {voiceError && (
+          <p className="text-[12px] text-amber-300/90">{voiceError}</p>
+        )}
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
@@ -334,47 +439,51 @@ function ChatInput() {
               ref={fileRef}
               onChange={(e) => {
                 const file = e.target.files[0];
-                if (file) {
-                  setSelectedFile(file);
-                }
+                if (file) attachFile(file);
               }}
             />
 
             <button
-              className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-600 hover:text-slate-400 hover:bg-white/5 border border-transparent hover:border-white/6 transition-all duration-150 bg-transparent cursor-pointer"
+              title="Attach a photo or PDF"
+              className="flex items-center justify-center w-9 h-9 rounded-full text-slate-300 hover:text-white hover:bg-white/8 transition-all duration-150 bg-transparent cursor-pointer"
               onClick={() => fileRef.current.click()}
             >
-              <Paperclip size={16} />
+              <Paperclip size={18} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              title={listening ? "Stop voice input" : "Voice input"}
+              onClick={toggleMic}
+              className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-150 cursor-pointer ${
+                listening
+                  ? "bg-red-500 text-white"
+                  : "text-slate-100 hover:bg-white/8"
+              }`}
+            >
+              <Mic size={18} />
             </button>
 
             <button
-              onClick={toggleMic}
-              className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 cursor-pointer ${
-                listening
-                  ? "bg-red-500 text-white animate-pulse"
-                  : "text-slate-600 hover:bg-white/5"
+              disabled={!isLoading && !value.trim() && !selectedFile}
+              onClick={() => (isLoading ? stopGeneration() : handleSendMessage())}
+              className={`flex items-center justify-center w-9 h-9 rounded-full border-none cursor-pointer transition-all duration-150 ${
+                isLoading || value.trim() || selectedFile
+                  ? "bg-white text-black hover:bg-slate-200"
+                  : "bg-white/10 text-slate-500 cursor-not-allowed"
               }`}
             >
-              {listening ? <Mic size={16} /> : <MicOff size={16} />}
+              {isLoading ? <Square size={13} fill="currentColor" /> : <Send size={15} />}
             </button>
-            {listening && (
-              <span className="text-[11px] text-red-300">Listening... tap the mic to stop</span>
-            )}
           </div>
-
-          <button
-            disabled={(!value.trim() && !selectedFile) || isLoading}
-            onClick={handleSendMessage}
-            className={`flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer transition-all duration-150 ${
-              value.trim()
-                ? "bg-linear-to-br from-indigo-500 to-violet-700 hover:opacity-90 text-white"
-                : "bg-white/5 text-slate-600 cursor-not-allowed"
-            }`}
-          >
-            <Send size={15} />
-          </button>
         </div>
       </div>
+      {centered && (
+        <p className="mx-auto mt-3 max-w-3xl text-center text-[12px] text-slate-500">
+          Enter to send. Shift+Enter for a new line. Ctrl+V pastes a photo or PDF.
+        </p>
+      )}
     </div>
   );
 }

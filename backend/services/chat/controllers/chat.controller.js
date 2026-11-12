@@ -80,7 +80,16 @@ export const updateConversation = async(req, res) =>{
 
 export const saveMessage = async (req, res) =>{
     try {
+        const userId = req.headers["x-user-id"]
         const {conversationId, role, content, images, artifacts}=req.body
+        const conversation = await Conversation.findOne({
+            _id: conversationId,
+            ...(userId ? { userId } : {})
+        })
+        if (!conversation) {
+            return res.status(404).json({ message: "Conversation not found" })
+        }
+
         const message = await Message.create({
             conversationId,
             content,
@@ -131,8 +140,20 @@ export const deleteConversation = async (req, res) => {
 
 export const getMessages = async (req, res) =>{
     try {
+        const userId = req.headers["x-user-id"]
+        const conversationId = req.params.conversationId
+        if (userId) {
+            const conversation = await Conversation.findOne({
+                _id: conversationId,
+                userId
+            })
+            if (!conversation) {
+                return res.status(200).json([])
+            }
+        }
+
         const messages = await Message.find({
-            conversationId:req.params.conversationId
+            conversationId
         })
 
         return res.status(200).json(messages)

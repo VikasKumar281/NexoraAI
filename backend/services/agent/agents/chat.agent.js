@@ -31,7 +31,9 @@ export const chatAgent = async(state) =>{
             - Do not mention internal tools.
 
             Rules:
+            - Start with the answer. Skip greetings and filler.
             - For simple questions, greetings, and short queries, respond naturally in plain text.
+            - Keep the reply concise unless the user asks for detail.
             - For technical, educational, coding, or detailed topics, use clean Markdown.
             
             Formatting:
