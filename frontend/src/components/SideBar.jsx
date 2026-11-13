@@ -3,14 +3,12 @@ import {
   Coins,
   LogOut,
   Menu,
-  MessageSquare,
   MoreHorizontal,
   PanelLeftIcon,
   PanelRight,
   Pencil,
   PenSquare,
   Pin,
-  Plus,
   Search,
   Trash2,
   User,
@@ -147,33 +145,7 @@ function SideBar() {
           <PenSquare size={17} />
         </button>
 
-        <div className="flex-1 overflow-y-auto px-2.5 pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden pt-5">
-          {conversations.filter((conv) => !conv.archived).map((conv) => {
-            const isActive = selectedConversation?._id == conv?._id;
-
-            return (
-              <div
-                key={conv._id}
-                onClick={() => dispatch(setSelectedConversation(conv))}
-                className={`flex items-center gap-2.5 cursor-pointer mb-0.5 px-3 py-2.5 rounded-[10px] border transition-colors duration-150 ${
-                  isActive
-                    ? "bg-indigo-500/10 border-indigo-500/10"
-                    : "bg-transparent border-transparent hover:bg-white/5"
-                }`}
-              >
-                <div
-                  className={`flex items-center justify-center shrink-0 w-5 h-5 rounded-lg transition-colors duration-150 ${
-                    isActive
-                      ? "bg-indigo-500/15 text-indigo-400"
-                      : "bg-white/5 text-slate-500"
-                  }`}
-                >
-                  <MessageSquare size={13} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <div className="flex-1" />
 
         <div className="relative shrink-0">
           {userData?.avatar && !imageError ? (
@@ -248,14 +220,13 @@ function SideBar() {
             </button>
           </div>
 
-          <div className="px-4 pt-4 pb-1">
+          <div className="px-2 pt-2">
             <button
-              className="w-full flex items-center justify-center gap-2 text-sm font-medium text-white bg-linear-to-br from-indigo-500 to-violet-700 rounded-xl py-2.5 border-none cursor-pointer hover:opacity-90 transition-opacity duration-150"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[14px] text-slate-100 hover:bg-white/6 border-none bg-transparent cursor-pointer"
               onClick={startNewChat}
-
             >
-              <Plus size={15} />
-              New Chat
+              <PenSquare size={16} />
+              New chat
             </button>
           </div>
 
@@ -294,13 +265,12 @@ function SideBar() {
                           setMenuId(null);
                           setMobileOpen(false);
                         }}
-                        className={`group relative flex items-center gap-2.5 cursor-pointer mb-0.5 px-3 py-2.5 rounded-[10px] border transition-colors duration-150 ${
+                        className={`group relative flex items-center gap-2 cursor-pointer mb-0.5 px-3 py-2 rounded-lg border transition-colors duration-150 ${
                           isActive
-                            ? "bg-indigo-500/10 border-indigo-500/10"
-                            : "bg-transparent border-transparent hover:bg-white/5"
+                            ? "bg-white/10 border-transparent"
+                            : "bg-transparent border-transparent hover:bg-white/6"
                         }`}
                       >
-                        <MessageSquare size={13} className={isActive ? "text-indigo-400" : "text-slate-500"} />
                         {rename?.id == conv._id ? (
                           <form className="flex-1" onSubmit={saveRename} onClick={(event) => event.stopPropagation()}>
                             <input

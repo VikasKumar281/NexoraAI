@@ -14,13 +14,12 @@ export const chatAgent = async(state) =>{
 
         const history = await getMemory(state.conversationId)
 
-        const searchContext = state.searchResults?`
-            Web Search Results: 
-            
+        const hasSearch = Array.isArray(state.searchResults) && state.searchResults.length > 0
+        const recentHistory = hasSearch ? history.slice(-2) : history
+        const searchContext = hasSearch ? `
+            Answer from these search snippets only. Start with the fact. Keep it short.
             ${JSON.stringify(state.searchResults)}
-            
-            Answer the user using only the above search results.
-        `:""
+        ` : ""
 
         const systemPrompt = `
             You are NexoraAI, an intelligent AI assistant
@@ -51,7 +50,7 @@ export const chatAgent = async(state) =>{
             new SystemMessage(systemPrompt)
         ]
         
-        history.forEach(msg => {
+        recentHistory.forEach(msg => {
             if(msg.role == "user"){
                 messages.push(new HumanMessage(msg.content))
             }

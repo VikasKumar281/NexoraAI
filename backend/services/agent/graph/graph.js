@@ -1,4 +1,4 @@
-import { StateGraph } from "@langchain/langgraph";
+import { END, StateGraph } from "@langchain/langgraph";
 import { agentState } from "./state.js";
 import { router } from "./router.js";
 import { chatAgent } from "../agents/chat.agent.js";
@@ -57,7 +57,7 @@ workflow.addConditionalEdges("router",(state)=>{
     imageAnalyzer:"imageAnalyzer"
 })
 
-workflow.addEdge("search","chat")
+workflow.addConditionalEdges("search", (state) => state.aiResponse ? END : "chat")
 workflow.addEdge("chat","__end__")
 workflow.addEdge("coding","__end__")
 workflow.addEdge("pdf","__end__")

@@ -28,31 +28,36 @@ function MessageBubble({role, content, images}){
   
   // console.log("MESSAGE CONTENT:", content);
 
+  const photos = (Array.isArray(images) ? images : [])
+    .map((img) => (typeof img === "string" ? img : img?.url))
+    .filter(Boolean);
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div className={`w-fit max-w-[92vw] md:max-w-[72%] px-4 py-2.5 rounded-2xl wrap-break-word overflow-hidden leading-relaxed ${
-        isUser
-          ? "bg-linear-to-br from-indigo-500 to-violet-700 text-white rounded-tr-sm"
-          : "text-slate-200 rounded-tl-sm"
-      }`}> 
-
-        {images.length > 0 && (
-          <div className="flex flex-wrap gap-3 mt-4">
-              {images.map((img, i)=>(
-                <img
-                  key ={i}
-                  src={img}
-                  onClick={() => setLightBox(img)}
-                  loading="lazy"
-                  onError={(e) => e.currentTarget.remove()}
-                  className="w-40 h-28 rounded-xl object-cover border border-white/10 cursor-zoom-in 
-                  hover:opacity-90 transition"
-                />
-              ))}
+      <div className={`flex max-w-[85%] flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
+        {photos.length > 0 && (
+          <div className="flex flex-wrap justify-end gap-2">
+            {photos.map((img, i) => (
+              <img
+                key={i}
+                src={img}
+                alt=""
+                onClick={() => setLightBox(img)}
+                loading="lazy"
+                onError={(e) => e.currentTarget.remove()}
+                className="max-h-64 max-w-[260px] rounded-2xl border border-white/10 object-cover cursor-zoom-in"
+              />
+            ))}
           </div>
         )}
-        
-        <Markdown 
+
+        {content ? (
+      <div className={`w-fit max-w-full px-4 py-2.5 rounded-3xl wrap-break-word overflow-hidden leading-relaxed ${
+        isUser
+          ? "bg-[#2f2f2f] text-white"
+          : "px-0 text-slate-200"
+      }`}>
+        <Markdown
           remarkPlugins={[remarkGfm]}
           components={{
             h1:({children}) =>(
@@ -65,7 +70,7 @@ function MessageBubble({role, content, images}){
               <h3 className="text-lg font-semibold mt-3 mb-2">{children}</h3>
             ),
             p:({children})=>(
-              <p className="mb-3 whitespace-pre-wrap wrap-break-word">{children}</p>
+              <p className="mb-3 last:mb-0 whitespace-pre-wrap wrap-break-word">{children}</p>
             ),
             ol:({children})=>(
               <ol className="list-decimal pl-5 space-y-1 my-2">{children}</ol>
@@ -158,8 +163,7 @@ function MessageBubble({role, content, images}){
                 onClick={() => setLightBox(src)}
                 loading="lazy"
                 onError={(e) => e.currentTarget.remove()}
-                className="w-40 h-28 rounded-xl object-cover border border-white/10 cursor-zoom-in 
-                hover:opacity-90 transition"
+                className="max-h-64 max-w-full rounded-xl object-contain cursor-zoom-in"
               />
             )
           } 
@@ -178,8 +182,8 @@ function MessageBubble({role, content, images}){
             {copiedMessage ? "Copied" : "Copy"}
           </button>
         )}
-
-
+        </div>
+        ) : null}
       </div>
 
 

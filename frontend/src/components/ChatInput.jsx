@@ -36,6 +36,18 @@ import getCurrentUser, { applySession } from "../features/getCurrentUser.js";
 import { setUserdata } from "../redux/userSlice.js";
 import { store } from "../redux/store.js";
 
+function joinSpeech(current, extra) {
+  const left = String(current || "").replace(/\s+/g, " ").trim();
+  const right = String(extra || "").replace(/\s+/g, " ").trim();
+  if (!right) return left;
+  if (!left) return right;
+  const leftKey = left.toLowerCase();
+  const rightKey = right.toLowerCase();
+  if (leftKey === rightKey || leftKey.endsWith(rightKey)) return left;
+  if (rightKey.startsWith(leftKey)) return right;
+  return `${left} ${right}`;
+}
+
 function ChatInput({ centered = false }) {
   const [value, setValue] = useState("");
   const [selectedAgent, setSelectedAgent] = useState("Auto");
@@ -51,8 +63,22 @@ function ChatInput({ centered = false }) {
   const abortRef = useRef(null);
   const dispatch = useDispatch();
 
+  const [previewUrl, setPreviewUrl] = useState("");
   const baseTextRef = useRef("");
   const listeningRef = useRef(false);
+  const ignoreVoiceRef = useRef(false);
+  const valueRef = useRef("");
+  valueRef.current = value;
+
+  useEffect(() => {
+    if (!selectedFile?.type?.startsWith("image/")) {
+      setPreviewUrl("");
+      return;
+    }
+    const url = URL.createObjectURL(selectedFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedFile]);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -63,38 +89,33 @@ function ChatInput({ centered = false }) {
     const recognition = new SpeechRecognition();
     recognition.lang = navigator.language || "en-IN";
     recognition.interimResults = true;
-    recognition.continuous = true;
+    recognition.continuous = false;
 
     recognition.onresult = (event) => {
-      let interimTranscript = "";
+      if (ignoreVoiceRef.current) return;
+      let finalText = "";
+      let interimText = "";
 
-      for (let index = event.resultIndex; index < event.results.length; index++) {
+      for (let index = 0; index < event.results.length; index++) {
         const transcript = event.results[index][0].transcript;
-        if (event.results[index].isFinal) {
-          baseTextRef.current = `${baseTextRef.current} ${transcript}`.replace(/\s+/g, " ").trim();
-        } else {
-          interimTranscript += transcript;
-        }
+        if (event.results[index].isFinal) finalText = joinSpeech(finalText, transcript);
+        else interimText = joinSpeech(interimText, transcript);
       }
 
-      setValue(`${baseTextRef.current} ${interimTranscript}`.replace(/\s+/g, " ").trim());
+      setValue(joinSpeech(baseTextRef.current, joinSpeech(finalText, interimText)));
     };
 
     recognition.onend = () => {
-      if (listeningRef.current) {
-        try {
-          recognition.start();
-        } catch {
-          listeningRef.current = false;
-          setListening(false);
-        }
-        return;
-      }
+      listeningRef.current = false;
       setListening(false);
     };
 
     recognition.onerror = (event) => {
-      if (event.error === "no-speech" || event.error === "aborted") return;
+      if (event.error === "no-speech" || event.error === "aborted") {
+        listeningRef.current = false;
+        setListening(false);
+        return;
+      }
       listeningRef.current = false;
       setListening(false);
       setVoiceError(
@@ -153,7 +174,8 @@ function ChatInput({ centered = false }) {
       return;
     }
 
-    baseTextRef.current = value.trim();
+    baseTextRef.current = valueRef.current.trim();
+    ignoreVoiceRef.current = false;
     listeningRef.current = true;
     setListening(true);
     setVoiceError("");
@@ -171,19 +193,31 @@ function ChatInput({ centered = false }) {
   };
 
   const handleSendMessage = async (promptText) => {
-    const prompt = typeof promptText === "string" ? promptText.trim() : value.trim();
+    const prompt = typeof promptText === "string" ? promptText.trim() : valueRef.current.trim();
     if (!prompt && !selectedFile) return;
-    if (listeningRef.current) {
-      listeningRef.current = false;
-      recognitionRef.current?.stop();
-      setListening(false);
+    ignoreVoiceRef.current = true;
+    listeningRef.current = false;
+    try {
+      recognitionRef.current?.abort();
+    } catch {
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        /* recognition already stopped */
+      }
     }
+    setListening(false);
+    setValue("");
+    valueRef.current = "";
 
     dispatch(setIsLoading(true));
     let conversation = selectedConversation;
     if (!conversation) {
       const conv = await createConversation();
       if (!conv?._id) {
+        ignoreVoiceRef.current = false;
+        valueRef.current = prompt;
+        setValue(prompt);
         dispatch(setIsLoading(false));
         return;
       }
@@ -220,7 +254,6 @@ function ChatInput({ centered = false }) {
       content: prompt,
       images: selectedFile?.type?.startsWith("image/") ? [URL.createObjectURL(selectedFile)] : [],
     }));
-    setValue("");
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -358,51 +391,36 @@ function ChatInput({ centered = false }) {
         </div>
 
         {selectedFile && (
-          <div className="my-3">
-            <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-              {selectedFile?.type === "application/pdf" ? (
-                <FileText size={16} className="text-red-400" />
+          <div className="flex">
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-2 py-2">
+              {selectedFile.type === "application/pdf" ? (
+                <FileText size={18} className="text-red-400" />
               ) : (
-                selectedFile?.type.startsWith("image/") && (
+                previewUrl && (
                   <img
-                    src={URL.createObjectURL(selectedFile)}
-                    className="h-10 w-10 rounded-xl object-cover mt-3"
+                    src={previewUrl}
+                    alt=""
+                    className="h-14 w-14 rounded-xl object-cover"
                   />
                 )
               )}
 
-              <div>
-                <p className="text-xs text-white">{selectedFile?.name}</p>
+              <div className="min-w-0 pr-1">
+                <p className="max-w-[180px] truncate text-xs text-white">{selectedFile.name}</p>
                 <p className="text-[10px] text-slate-500">
                   {Math.ceil(selectedFile.size / 1024)}KB
                 </p>
               </div>
 
               <button
-                className="ml-2"
                 onClick={() => {
                   setSelectedFile(null);
-                  fileRef.current.value = "";
+                  if (fileRef.current) fileRef.current.value = "";
                 }}
               >
                 <X size={14} className="text-slate-500 hover:text-white" />
               </button>
             </div>
-          </div>
-        )}
-
-        {listening && (
-          <div className="flex items-center gap-2 rounded-xl bg-red-500/10 px-3 py-2 text-[12px] text-red-200">
-            <span className="flex items-end gap-0.5 h-3">
-              {[0, 1, 2, 3].map((bar) => (
-                <span
-                  key={bar}
-                  className="w-0.5 rounded-full bg-red-300 origin-bottom animate-pulse"
-                  style={{ height: `${8 + bar * 2}px`, animationDelay: `${bar * 120}ms` }}
-                />
-              ))}
-            </span>
-            Listening. Speak, then tap the mic to stop.
           </div>
         )}
 
