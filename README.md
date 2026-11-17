@@ -1,850 +1,213 @@
-# NexoraAI
-
-**An AI-powered, multi-agent assistant that brings chat, coding, web search, document generation, image generation, and image understanding into one workspace.**
-
-NexoraAI is a ChatGPT-style web application built with **React, Node.js, Express, LangGraph, MongoDB, and Redis**. A user signs in with Google, starts a conversation, and sends a prompt to the assistant. The backend routes the request to the appropriate specialist agent, runs the selected AI workflow, and returns a response that is displayed in the chat interface.
+# NexoraAI 🚀
 
 <p align="center">
-  <a href="https://nexoraai-vlme.onrender.com/"><strong>Open Live Application</strong></a>
-  &nbsp; · &nbsp;
-  <a href="https://github.com/VikasKumar281/NexoraAI">View Source Code</a>
+  <strong>A multi-agent AI workspace for chat, coding, research, documents, and visual understanding.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/VikasKumar281/NexoraAI">GitHub Repository</a> ·
+  <a href="https://github.com/VikasKumar281/NexoraAI/issues">Report an Issue</a>
 </p>
 
 ---
 
-## Table of Contents
+## Table of Contents 📚
 
-- [Project Overview](#-project-overview)
-- [Live Application](#-live-application)
-- [Features](#-features)
-- [AI Agents and Model Routing](#-ai-agents-and-model-routing)
-- [Technology Stack](#-technology-stack)
-- [System Architecture](#-system-architecture)
-- [How a Request Works](#-how-a-request-works)
-- [Authentication and Session Management](#-authentication-and-session-management)
-- [Conversation and Message Management](#-conversation-and-message-management)
-- [File Uploads and Document Processing](#-file-uploads-and-document-processing)
-- [Code Generation and Artifact Preview](#-code-generation-and-artifact-preview)
-- [Credits, Plans, and Rate Limits](#-credits-plans-and-rate-limits)
-- [Database and Storage Design](#-database-and-storage-design)
-- [API Reference](#-api-reference)
-- [Project Structure](#-project-structure)
-- [Environment Variables](#-environment-variables)
-- [Run the Project Locally](#-run-the-project-locally)
-- [Deployment on Render](#-deployment-on-render)
-- [Earlier Microservices Deployment Design](#-earlier-microservices-deployment-design)
-- [Implementation Notes](#-implementation-notes)
-- [Future Improvements](#-future-improvements)
+- [🌟 1. Overview](#1-overview)
+- [✨ 2. Features](#2-features)
+- [🔄 3. How NexoraAI Works](#3-how-nexoraai-works)
+- [🧰 4. Technology Stack](#4-technology-stack)
+- [🏗️ 5. Architecture](#5-architecture)
+- [📁 6. Project Structure](#6-project-structure)
+- [✅ 7. Prerequisites](#7-prerequisites)
+- [⚙️ 8. Local Setup](#8-local-setup)
+- [🔐 9. Environment Variables](#9-environment-variables)
+- [▶️ 10. Run the Application](#10-run-the-application)
+- [🤖 11. AI Agent Workflows](#11-ai-agent-workflows)
+- [🔌 12. API Reference](#12-api-reference)
+- [🗄️ 13. Data, Sessions, and File Storage](#13-data-sessions-and-file-storage)
+- [☁️ 14. Deployment on Render](#14-deployment-on-render)
+- [🛠️ 15. Troubleshooting](#15-troubleshooting)
+- [🔒 16. Security Notes](#16-security-notes)
+- [🚧 17. Future Improvements](#17-future-improvements)
+- [👨‍💻 18. Author](#18-author)
 
 ---
 
-## 📌 Project Overview
+## 1. Overview 🌟
 
-NexoraAI was designed to provide multiple AI capabilities through a single chat interface. Instead of relying on one model for every type of request, the application uses a **LangGraph workflow** to select a specialist agent based on the user's selected mode, prompt, and uploaded file.
+**NexoraAI** is a full-stack AI workspace that brings multiple AI capabilities into one application. Instead of using a separate tool for every task, users can chat, ask for current information, generate code, create PDF documents and PowerPoint presentations, generate images, and analyze uploaded files from one interface.
 
-For example:
+The backend uses a LangGraph workflow to decide which specialist agent should handle a request. Users can let the application select an agent automatically or choose an agent directly.
 
-- A general question is handled by the Chat Agent.
-- A request for recent information is sent to the Search Agent, and its results are then used by the Chat Agent to prepare the answer.
-- A request to debug or generate code is handled by the Coding Agent.
-- A request to create a PDF or PowerPoint presentation is handled by the corresponding document-generation agent.
-- An uploaded PDF can be processed with retrieval-augmented generation (RAG), allowing the user to ask questions about the document.
-- An uploaded image can be sent to the Image Analyzer, while a request to create a new image is handled by the Vision Agent.
+The project is organized into modular backend domains:
 
-The frontend is a React single-page application. The backend is built with Express and organized into separate service modules for authentication, chat, billing, and AI-agent workflows. The current Render deployment runs these modules inside one Node.js process to keep the deployment simpler and lower-cost.
+- **Auth** — authentication, user sessions, plans, and credits.
+- **Chat** — conversations, messages, and conversation management.
+- **Billing** — subscription checkout and payment verification.
+- **Agent** — prompt routing and AI task execution.
+- **Gateway/shared modules** — request protection and reusable backend functionality.
 
-## 🌐 Live Application
+The current production setup uses a **combined Express server** in `backend/server.js`. The modular service folders remain in the codebase, while the Render blueprint deploys a single web service and a Redis instance.
 
-| Resource | Link |
+## 2. Features ✨
+
+| Feature | What it does |
 | --- | --- |
-| Live application | [https://nexoraai-vlme.onrender.com](https://nexoraai-vlme.onrender.com) |
-| GitHub repository | [https://github.com/VikasKumar281/NexoraAI](https://github.com/VikasKumar281/NexoraAI) |
+| 💬 AI Chat | Answers general questions and maintains conversation context. |
+| 🧭 Automatic Agent Routing | Selects a specialist based on the prompt or uploaded file. |
+| 🔎 Web Search | Retrieves current web information through Tavily. |
+| 💻 Coding Assistant | Generates code projects and helps explain, review, convert, or debug code. |
+| 📄 PDF Generation | Creates a downloadable PDF from a topic or instruction. |
+| 📊 PowerPoint Generation | Creates a downloadable presentation. |
+| 🎨 Image Generation | Converts a text request into an image-generation prompt and retrieves a generated image. |
+| 📚 PDF RAG | Extracts text from an uploaded PDF, retrieves relevant chunks, and answers from that document. |
+| 🖼️ Image Analysis | Analyzes an uploaded image and can explain visible text, charts, and other content. |
+| 🗂️ Conversation Management | Creates, lists, updates, and deletes conversations. |
+| 🔐 Authentication | Uses Firebase Authentication and a server-managed session. |
+| 🎟️ Credits and Limits | Applies agent-specific usage limits and credit deductions. |
+| 💳 Billing | Creates Razorpay orders and verifies payment signatures. |
+| 📦 Generated Artifacts | Makes generated files available through temporary download links. |
 
-The live URL is configured as the repository homepage. Availability and performance depend on the hosting platform and the external services configured for the application.
+> Feature availability depends on configuring the relevant database, Redis instance, and provider credentials. A frontend build alone does not validate external integrations.
 
----
+## 3. How NexoraAI Works 🔄
 
-## ✨ Features
-
-### 1. Google Authentication
-
-- Users sign in with their Google account through Firebase Authentication.
-- The frontend obtains a Firebase ID token and sends it to the backend.
-- The backend verifies the token with Firebase Admin SDK.
-- A user record is created in MongoDB when the account is used for the first time.
-- The backend creates a Redis session and sends the session identifier to the browser in an HTTP-only cookie.
-- The session is configured for a seven-day lifetime.
-
-### 2. AI Chat Workspace
-
-- Start a new conversation from the sidebar.
-- Conversations are created when the first message is sent, rather than saving an empty chat immediately.
-- Previous conversations are loaded from MongoDB.
-- The most recently updated, non-archived conversation is selected when the user loads the workspace.
-- The chat view displays messages in chronological order and scrolls to the latest message.
-- Assistant replies support Markdown, tables, links, images, and formatted code blocks.
-- Users can copy an assistant response or an individual code block.
-
-### 3. Conversation Management
-
-The sidebar includes tools to manage saved conversations:
-
-- **Search:** Filter conversations by their title.
-- **Rename:** Change a conversation title.
-- **Pin / Unpin:** Keep important conversations in a separate Pinned section.
-- **Archive / Unarchive:** Move conversations out of the recent list without deleting them.
-- **Delete:** Delete a conversation and its saved messages.
-- **Recent conversations:** Display non-pinned conversations ordered by their latest update.
-
-Pinned conversations are displayed separately from the regular recent list. Archived conversations can be opened from the Archived view.
-
-### 4. Specialist AI Modes
-
-The message composer provides these modes:
-
-| Mode | Purpose |
-| --- | --- |
-| Auto | Let the backend router choose an agent based on the request or uploaded file. |
-| Chat | General questions, explanations, and conversation. |
-| Coding | Code generation, debugging, code review, explanations, and related development tasks. |
-| PDF | Generate a formatted PDF document from a topic. |
-| PPT | Generate a PowerPoint presentation from a topic. |
-| Vision | Generate a new image from a text prompt. |
-| Search | Search the web for current or relevant information. |
-
-When a user selects a specific mode, that selection takes precedence over automatic routing. In Auto mode, PDF and image attachments are routed to their corresponding document/image understanding workflows.
-
-### 5. File Attachments
-
-Users can provide supporting files in the chat composer:
-
-- Attach a PDF or image using the paperclip button.
-- Drag and drop a supported file into the composer.
-- Paste an image or PDF from the clipboard with `Ctrl + V` where the browser provides the clipboard file.
-- View the selected file before sending it.
-- Remove the attachment before sending the message.
-
-The backend accepts PDF and image MIME types and configures a maximum upload size of **20 MB** in Multer.
-
-### 6. Voice-to-Text Input
-
-The microphone button uses the browser's **Web Speech API SpeechRecognition interface** to convert speech into text in the composer.
-
-- The recognition language follows the browser's configured language (`navigator.language`) with `en-IN` as a fallback.
-- Recognized speech is inserted into the message input.
-- The user can stop voice input using the microphone button.
-- The feature depends on browser support and microphone permission. The interface indicates that voice input is intended for supported browsers such as Chrome and Edge.
-
-This is speech-to-text dictation. It is not a live audio conversation or voice call with the AI.
-
-### 7. Stop a Pending Response
-
-The composer provides a stop control while a response request is in progress. The frontend uses an `AbortController` to abort the browser's pending request. This stops the client from waiting for that response; it should not be interpreted as guaranteed cancellation of all server-side model processing.
-
-### 8. Code Workspace
-
-When the Coding Agent generates a project, the response can include multiple files. These are stored as message artifacts and shown in a separate code panel.
-
-- Open generated files in the Monaco Editor.
-- Switch between files such as `index.html`, `style.css`, and `script.js`.
-- Copy the contents of the selected file.
-- Preview generated HTML in an iframe when an `index.html` artifact is available.
-- Open the code panel on smaller screens through the View Code control.
-
-### 9. PDF and PowerPoint Downloads
-
-- The PDF Agent produces downloadable PDF documents using PDFKit.
-- The PPT Agent produces downloadable `.pptx` presentations using PptxGenJS.
-- Generated files are written to a temporary server directory.
-- The current implementation schedules generated files for deletion after **10 minutes**.
-
-### 10. Credit-Based Billing
-
-- New users receive the Free plan and its initial credit balance.
-- Users can upgrade to Starter or Pro through Razorpay Checkout.
-- The backend creates payment orders and verifies the Razorpay signature before applying a paid plan.
-- The billing drawer displays the current plan and credit balance.
-- After successful verification, the frontend refreshes the session data so the plan and credits can update without a full page reload.
-
----
-
-## 🤖 AI Agents and Model Routing
-
-The agent workflow is implemented with **LangGraph**. Its state carries the prompt, selected agent, conversation ID, user ID, uploaded file, search results, generated images, artifacts, and the assistant response.
-
-### Agent Workflow
+At a high level, a request travels through the following path:
 
 ```text
-                         User Message
-                              |
-                              v
-                     POST /api/agent/chat
-                              |
-                              v
-                       LangGraph Router
-                              |
-             +----------------+----------------+
-             |                |                |
-             v                v                v
-       Explicit Mode     File Detection    Prompt Matching
-             |                |                |
-             +----------------+----------------+
-                              |
-                              v
-                       Selected Agent
-                              |
-       +----------+-----------+----------+----------+
-       |          |           |          |          |
-       v          v           v          v          v
-      Chat      Search      Coding      PDF        PPT
-       |          |                                  
-       |          v                                  
-       |      Search Results                         
-       |          |                                  
-       +----------+                                  
-       |                                             
-       +--------------------+------------------------+
-                            |
-                            v
-                     Agent Response
-                            |
-                            v
-                  Save to Chat Database
-                            |
-                            v
-                   Return Result to UI
+User
+  |
+  v
+React + Vite Frontend
+  |
+  | HTTP request (Axios, cookie credentials)
+  v
+Express Backend (backend/server.js)
+  |
+  +---- Authentication / session protection
+  |
+  +---- Chat routes
+  |
+  +---- Billing routes
+  |
+  +---- Agent route
+          |
+          v
+       LangGraph Workflow
+          |
+          v
+       Prompt / File Router
+          |
+          +---- Chat Agent
+          +---- Search Agent
+          +---- Coding Agent
+          +---- PDF Agent
+          +---- PPT Agent
+          +---- Vision Agent
+          +---- PDF RAG Agent
+          +---- Image Analyzer Agent
+          |
+          v
+       Save conversation and response
+          |
+          v
+       Return answer / artifact links
+          |
+          v
+       React UI
 ```
 
-The graph also includes separate nodes for `pdfRag` and `imageAnalyzer`. The router sends an uploaded PDF to `pdfRag` and an uploaded image to `imageAnalyzer` when Auto mode is selected.
+### Request lifecycle 🔄
 
-### 1. Router Agent
+1. The user signs in through the frontend.
+2. Firebase Authentication provides an ID token.
+3. The frontend sends the token to the backend login endpoint.
+4. The backend verifies the token and creates a server-side session.
+5. Protected API requests include the session cookie.
+6. The user sends a prompt, selects an agent, or uploads a supported file.
+7. The backend passes the request into the LangGraph workflow.
+8. The router selects the relevant specialist agent.
+9. The selected agent calls its configured model or external integration.
+10. The backend stores the user and assistant messages and returns the result.
+11. The frontend renders the response, image, or downloadable artifact.
 
-The router decides which specialist should handle a request.
+The agent upload endpoint accepts multipart form data and uses the field name `file`.
 
-Its selection process is:
+## 4. Technology Stack 🧰
 
-1. If the user has selected a mode other than Auto, use that mode.
-2. In Auto mode, inspect the uploaded file. A PDF is routed to `pdfRag`, and an image is routed to `imageAnalyzer`.
-3. Apply quick keyword and greeting checks for common request types.
-4. If a quick match is not found, ask the routing language model to classify the prompt into one of the supported modes.
-5. Send the state to the selected LangGraph node.
+### Frontend 💻
 
-The router includes quick checks for presentation requests, PDF generation requests, image-generation requests, web-search-style requests, coding requests, and common greetings. The model-based router is used when these checks do not produce a match.
-
-### 2. Chat Agent
-
-The Chat Agent handles ordinary conversation, explanations, and general questions.
-
-Its workflow:
-
-1. Check the user's chat rate limit.
-2. Load recent conversation history from Redis or retrieve it from the chat database when it is not cached.
-3. Add a system message containing NexoraAI's response and Markdown formatting rules.
-4. Include web search context when the request has passed through the Search Agent.
-5. Send the conversation messages to the Groq chat model.
-6. Deduct the configured chat credit cost.
-7. Return the assistant response to the agent controller.
-
-### 3. Search Agent
-
-The Search Agent uses the Tavily Search integration.
-
-- It submits the user's prompt as a search query.
-- The current Tavily configuration requests up to five general search results and includes images.
-- Search results are stored in the graph state.
-- The LangGraph workflow then passes the state from Search to Chat.
-- The Chat Agent uses the retrieved search context to prepare a natural-language answer.
-
-This design separates information retrieval from response composition.
-
-### 4. Coding Agent
-
-The Coding Agent handles development-related requests. It uses a model to classify the user's coding intent into categories such as:
-
-- `CODE_GENERATION`
-- `CODE_REVIEW`
-- `CODE_EXPLANATION`
-- `DEBUGGING`
-- `CONVERSION`
-- `DOCUMENTATION`
-
-For code generation, the agent asks the coding model to return structured JSON containing a `files` array. Each generated file has a name and content. The current prompt defaults to HTML, CSS, and JavaScript unless the user explicitly requests another framework or stack.
-
-For code review, explanation, debugging, conversion, or documentation, the agent returns a Markdown response rather than a project artifact. Generated project files are returned through the `artifacts` field and displayed in the frontend code panel.
-
-### 5. PDF Agent — PDF Generation
-
-The PDF Agent creates a document from a user-provided topic.
-
-1. The language model is prompted to create structured document data containing a title, subtitle, headings, and bullet points.
-2. The response is parsed as JSON.
-3. PDFKit builds an A4 PDF with a title, optional subtitle, sections, bullet points, and a NexoraAI footer.
-4. The generated PDF is saved to the temporary file directory.
-5. The assistant returns a download link.
-
-The generation prompt requests between four and eight sections, with concise points under each section.
-
-### 6. PDF RAG Agent — Ask Questions About a PDF
-
-The PDF RAG workflow is different from PDF generation. It is used when a PDF is attached and Auto routing selects document understanding.
-
-1. Read the uploaded PDF and extract its text with `pdf-parse`.
-2. Split the extracted text into overlapping text chunks using `RecursiveCharacterTextSplitter`.
-3. Create a Qdrant vector collection for the uploaded document.
-4. Generate embeddings with Google's `gemini-embedding-001` embedding model.
-5. Search for the five most relevant chunks for the user's question.
-6. Pass those chunks as context to the language model.
-7. Ask the model to answer only from the uploaded PDF context and to say when the requested information cannot be found.
-8. Remove the temporary uploaded PDF from the server after processing.
-
-The current text-splitting configuration uses a **1,000-character chunk size** and **200-character overlap**. The vector search retrieves up to **five relevant chunks** for a question.
-
-### 7. PPT Agent — PowerPoint Generation
-
-The PPT Agent creates a PowerPoint presentation from a topic.
-
-1. The language model returns structured JSON containing a title, subtitle, and slide content.
-2. The current prompt requests six content slides and concise bullet points for each slide.
-3. PptxGenJS creates a wide-layout presentation with a cover slide, content slides, and a closing thank-you slide.
-4. The presentation is written to a Node.js buffer and saved in the temporary file directory.
-5. The assistant returns a `.pptx` download link.
-
-### 8. Vision Agent — Image Generation
-
-The Vision Agent generates a new image from a text prompt.
-
-1. The prompt is expanded into a more detailed image-generation prompt by the configured language model.
-2. The expanded prompt is sent to the Pollinations image-generation endpoint.
-3. The returned image is downloaded as binary data.
-4. The image is saved to the temporary file directory.
-5. The assistant returns an image preview and a download link.
-
-The current code uses the Pollinations image endpoint. AWS S3 upload calls in this agent are commented out and are not used by the active Render implementation.
-
-### 9. Image Analyzer Agent — Image Understanding
-
-The Image Analyzer handles an image attached to a message in Auto mode.
-
-- It reads the uploaded image from the temporary upload directory.
-- The image is converted to Base64 and sent with the user's question to the Gemini model.
-- Its system instructions ask it to analyze the uploaded image, extract visible text where possible, explain charts or tables, and avoid inventing unclear details.
-- The uploaded file is removed in the cleanup block after processing.
-
-### Model and Provider Configuration
-
-The model assignments are centralized in `backend/services/agent/config/llmModels.js`.
-
-| Task | Provider / model configuration |
+| Technology | Responsibility |
 | --- | --- |
-| Chat responses | Groq — `openai/gpt-oss-120b` |
-| Automatic agent classification | Groq — default model returned by `getModel()` |
-| Coding responses | OpenRouter — `deepseek/deepseek-chat` |
-| Coding intent classification | Groq — default model returned by `getModel()` |
-| Image understanding | Google Gemini — `gemini-3.8-flash` |
-| PDF text embeddings | Google Gemini embeddings — `gemini-embedding-001` |
-| Web search | Tavily Search integration |
-| Image generation | Pollinations image endpoint, with the prompt expanded by the configured Groq model |
-| PDF and PPT content | Groq — default model returned by `getModel()` |
+| React 19 | Component-based user interface. |
+| Vite | Development server and production build. |
+| Redux Toolkit | Application state management. |
+| React Redux | Connects React components to the Redux store. |
+| Axios | HTTP requests to the backend. |
+| Firebase Web SDK | Browser-side authentication. |
+| Tailwind CSS 4 | Utility-first styling. |
+| Motion | UI animations. |
+| Monaco Editor | Code editing and display. |
+| React Markdown | Markdown response rendering. |
+| Lucide React / React Icons | Interface icons. |
 
-The model names and provider assignments above reflect the current source files on the `main` branch. Availability and model access depend on the corresponding provider account and API key.
+### Backend ⚙️
 
----
-
-## 🧰 Technology Stack
-
-### Frontend
-
-| Technology | Usage |
+| Technology | Responsibility |
 | --- | --- |
-| React 19 | Component-based user interface |
-| Vite | Frontend development server and production build |
-| Redux Toolkit | Application state for users, conversations, messages, loading state, and artifacts |
-| React Redux | Access Redux state from React components |
-| Tailwind CSS 4 | Utility-first styling and responsive layouts |
-| Motion | UI transitions and panel animations |
-| Lucide React | Interface icons |
-| React Markdown | Render assistant responses as Markdown |
-| remark-gfm | GitHub-Flavored Markdown support such as tables |
-| react-syntax-highlighter | Syntax-highlighted code blocks |
-| Monaco Editor | Generated code viewing |
-| Firebase Authentication | Google sign-in in the browser |
-| Axios | HTTP requests to the backend |
+| Node.js (20+) | JavaScript runtime. |
+| Express 5 | HTTP server and API routes. |
+| MongoDB + Mongoose | Persistent application data. |
+| Redis / ioredis | Session and short-lived application data. |
+| Firebase Admin | Verification of Firebase ID tokens. |
+| LangChain | Model and tool integrations. |
+| LangGraph | State-based agent workflow and routing. |
+| Multer | Multipart file uploads. |
+| PDF Parse | PDF text extraction. |
+| PDFKit | PDF document generation. |
+| PptxGenJS | PowerPoint generation. |
+| Razorpay SDK | Payment order and verification integration. |
 
-### Backend
+### External integrations 🔗
 
-| Technology | Usage |
+- **Google Gemini** — model and embedding integration used by relevant workflows.
+- **Groq** — chat and model execution.
+- **OpenRouter** — coding model integration.
+- **Tavily** — web search.
+- **Qdrant** — vector storage and similarity search for PDF RAG.
+- **Firebase** — user authentication.
+- **MongoDB** — persistent records.
+- **Redis** — session, memory, and rate-limit support.
+- **Razorpay** — payment processing.
+- **AWS S3 helpers** — retained in the repository for an earlier storage path; current document/image generation uses temporary local file storage.
+
+## 5. Architecture 🏗️
+
+### Backend ⚙️ modules
+
+| Module | Responsibility |
 | --- | --- |
-| Node.js | JavaScript runtime |
-| Express 5 | HTTP API and application server |
-| LangGraph | Agent workflow and conditional routing |
-| LangChain | Model messages, provider integrations, text splitting, embeddings, and vector search |
-| MongoDB | Users, payments, conversations, and messages |
-| Mongoose | MongoDB models and database connections |
-| Redis / ioredis | Sessions, conversation memory cache, and rate-limit counters |
-| Firebase Admin SDK | Verify Firebase ID tokens on the server |
-| Multer | Receive uploaded PDF and image files |
-| Axios | Internal HTTP service calls where configured |
-| Tavily | Web search |
-| Qdrant | Vector storage and similarity search for PDF RAG |
-| PDFKit | Generate PDF documents |
-| PptxGenJS | Generate PowerPoint presentations |
-| Razorpay | Payment order creation and signature verification |
+| Gateway | Session-protected entry points and current-user lookup. |
+| Auth | Firebase token verification, login/logout, user records, plans, and credit operations. |
+| Chat | Conversation and message persistence. |
+| 💳 Billing | Razorpay order creation and signature verification. |
+| Agent | Agent request handling and LangGraph execution. |
+| Shared | Reusable MongoDB connection and internal controller-call helpers. |
 
-### External Services
+### Current deployment model 🚀
 
-- Firebase Authentication
-- MongoDB Atlas or another MongoDB-compatible deployment
-- Redis-compatible service
-- Groq API
-- OpenRouter API
-- Google Gemini API
-- Tavily Search API
-- Qdrant Cloud or a reachable Qdrant instance
-- Razorpay
-- Pollinations image generation endpoint
-- Render for the current hosting configuration
+The backend has separate module directories, but the active Render start command is:
 
----
-
-## 🏗️ System Architecture
-
-### Current Production Architecture
-
-The current Render deployment uses one Node.js process. `backend/server.js` is the production entry point. It imports the authentication, chat, billing, and agent modules and mounts their routes under a common Express application.
-
-```text
-                         Browser
-                            |
-                            | HTTPS / Cookie
-                            v
-                 React + Vite Frontend
-                            |
-                            | /api/*
-                            v
-                 Express Application
-                  backend/server.js
-                            |
-          +-----------------+-----------------+
-          |                 |                 |
-          v                 v                 v
-      Auth Routes       Chat Routes       Billing Routes
-          |                 |                 |
-          v                 v                 v
-      Auth Logic        Chat Logic       Razorpay Logic
-          |                 |                 |
-          +-----------------+-----------------+
-                            |
-                            v
-                       Agent Route
-                            |
-                            v
-                       LangGraph
-                            |
-          +-----------------+------------------+
-          |                 |                  |
-          v                 v                  v
-      AI Providers      Tavily Search      Qdrant RAG
-          |                                    |
-          +-----------------+------------------+
-                            |
-                            v
-                 MongoDB + Redis + Temp Files
+```bash
+node backend/server.js
 ```
 
-### Why the Current Deployment Uses One Process
+That server mounts the Auth, Chat, Billing, and Agent routes in one Node process. Do not assume that the current Render blueprint starts one independent container for every module.
 
-The codebase was initially organized around independently deployable backend services. The current Render configuration uses a combined Express server instead:
+## 6. Project Structure 📁
 
-- There is one web service to build and run.
-- Auth, chat, billing, and agent routes are mounted in the same process.
-- Internal calls can use controller functions directly through `backend/shared/callHandler.js` when separate service URLs are not configured.
-- The browser frontend is built into `frontend/dist` and served by the Express application.
-- Redis remains a separate service for session and cache operations.
-
-This reduces the number of application containers required by the current deployment while preserving the service-oriented code organization.
-
----
-
-## 🔄 How a Request Works
-
-### Login Request
-
-```text
-User clicks Continue with Google
-              |
-              v
-Firebase Google Sign-In
-              |
-              v
-Frontend receives Firebase ID token
-              |
-              v
-POST /api/auth/login
-              |
-              v
-Firebase Admin verifies token
-              |
-              v
-Find or create MongoDB user
-              |
-              v
-Create Redis session (7 days)
-              |
-              v
-Set HTTP-only session cookie
-              |
-              v
-Frontend stores user data in Redux
-```
-
-### Chat Request
-
-```text
-User submits text / file / selected mode
-                    |
-                    v
-Frontend creates conversation if required
-                    |
-                    v
-POST /api/agent/chat
-                    |
-                    v
-Session middleware identifies the user
-                    |
-                    v
-Agent controller saves the user message
-                    |
-                    v
-LangGraph router selects an agent
-                    |
-                    v
-Specialist agent runs its workflow
-                    |
-                    v
-Assistant response is saved to MongoDB
-                    |
-                    v
-Redis conversation memory is updated
-                    |
-                    v
-Response returns to the frontend
-                    |
-                    v
-Redux updates the currently active chat
-```
-
-### Conversation Isolation During Responses
-
-The frontend attaches a conversation ID to messages and keeps track of the active conversation ID. A response is applied to the visible chat only when it belongs to the conversation that is still open. The backend also saves the request and response against the same conversation ID. If the conversation has been deleted while a response is being processed, the chat save operation can return a not-found result and the agent controller returns a discarded response.
-
----
-
-## 🔐 Authentication and Session Management
-
-NexoraAI uses Firebase Authentication for Google sign-in and Redis for application sessions.
-
-### Login Flow
-
-1. The user selects **Continue With Google**.
-2. Firebase Authentication performs the Google sign-in flow in the frontend.
-3. The frontend obtains the Firebase ID token from the authenticated Firebase user.
-4. The token is sent to `POST /api/auth/login`.
-5. The backend uses Firebase Admin SDK to verify the token.
-6. The backend finds the user by `firebaseUid`. If no user exists, a user record is created.
-7. The backend creates a random session identifier and stores the session data in Redis.
-8. The session identifier is returned in an HTTP-only cookie.
-
-### Session Storage
-
-The backend stores two Redis keys:
-
-| Redis key | Purpose |
-| --- | --- |
-| `user-session-<userId>` | Maps the user ID to the current session identifier. |
-| `session-<sessionId>` | Stores the serialized session information used by authentication middleware. |
-
-The session data includes the user's ID, name, email, avatar, plan, credits, total credits, and plan expiry metadata.
-
-The cookie is configured with `httpOnly`, `secure`, `SameSite=None`, and a seven-day maximum age. Protected routes use the `protect` middleware to read the session from Redis and attach the user information to the request.
-
-### Current User Endpoint
-
-The frontend requests `GET /api/me` during application startup to restore the user session. After payment or a credit deduction, it can request the endpoint again to refresh the user information shown in the interface.
-
----
-
-## 💬 Conversation and Message Management
-
-### MongoDB Conversation Model
-
-A conversation contains:
-
-- `title` — defaults to `New Chat`.
-- `userId` — identifies its owner.
-- `pinned` — whether the conversation is pinned.
-- `pinnedAt` — timestamp used to order pinned conversations.
-- `archived` — whether the conversation is archived.
-- `createdAt` and `updatedAt` — timestamps maintained by Mongoose.
-
-### MongoDB Message Model
-
-Each message contains:
-
-- `conversationId` — the conversation to which it belongs.
-- `role` — either `user` or `assistant`.
-- `content` — message text or Markdown response.
-- `images` — image URLs or image references associated with the message.
-- `artifacts` — generated project files, including their names and contents.
-- `createdAt` and `updatedAt` — timestamps.
-
-### Conversation Lifecycle
-
-1. The user selects New Chat. The frontend clears the selected conversation but does not immediately create an empty database record.
-2. When the first message is sent, the frontend requests a new conversation from the chat API.
-3. The user message is saved against that conversation ID.
-4. The agent processes the prompt and returns the result.
-5. The assistant message, images, and generated artifacts are saved against the same conversation.
-6. The sidebar refreshes or reorders conversations using the latest update timestamp.
-
-### Redis Conversation Memory
-
-The agent service uses Redis keys in the form `messages-<conversationId>` for recent chat context. When the cache is not available, it retrieves the saved messages from the chat service/database. The in-memory context is limited to the latest 20 message entries before older entries are removed from that cache list.
-
-MongoDB remains the persistent source for saved conversations and messages; Redis is used to make recent context retrieval faster.
-
----
-
-## 📎 File Uploads and Document Processing
-
-### Accepted Upload Types
-
-| File type | Supported workflow in Auto mode |
-| --- | --- |
-| PDF | PDF RAG Agent (`pdfRag`) |
-| Image | Image Analyzer Agent (`imageAnalyzer`) |
-
-The upload middleware uses disk storage in a temporary operating-system directory. It accepts PDF and image MIME types and has a 20 MB file-size limit.
-
-### PDF Question Answering
-
-The PDF RAG Agent extracts text, splits it into chunks, embeds the chunks, stores them in a Qdrant collection, retrieves relevant chunks for the user's question, and asks the language model to answer using that context. This is retrieval-augmented generation rather than simply attaching the whole PDF text to every request.
-
-### Image Understanding
-
-The Image Analyzer reads the uploaded image, converts it to Base64, and sends it to Gemini together with the prompt. The model is instructed to describe the image, extract visible text, interpret charts or tables, and state when details are unclear.
-
-### Temporary Upload Cleanup
-
-The PDF and image processing agents include cleanup logic to remove their uploaded temporary file after processing. This avoids treating the upload directory as permanent file storage.
-
----
-
-## 🧑‍💻 Code Generation and Artifact Preview
-
-The Coding Agent supports both conversational coding assistance and multi-file code generation.
-
-### Code Assistance
-
-For debugging, explanation, review, conversion, and documentation tasks, the Coding Agent returns a Markdown answer. The frontend renders the response with syntax highlighting and a copy action for code blocks.
-
-### Project Generation
-
-For a project-generation request, the Coding Agent asks the model for JSON in this shape:
-
-```json
-{
-  "files": [
-    {
-      "name": "index.html",
-      "content": "..."
-    },
-    {
-      "name": "style.css",
-      "content": "..."
-    },
-    {
-      "name": "script.js",
-      "content": "..."
-    }
-  ]
-}
-```
-
-The generated files are wrapped in an artifact object containing an ID, type, title, and files array. The agent controller saves the artifact with the assistant message, and the frontend displays it in the Artifact panel.
-
-### Code Panel
-
-`frontend/src/components/Artifact.jsx` uses Monaco Editor to display generated code. It detects common file extensions to select the editor language. When the artifact contains `index.html`, the Preview tab combines the HTML, CSS, and JavaScript contents and renders them in a sandboxed iframe.
-
----
-
-## 💳 Credits, Plans, and Rate Limits
-
-### Plans
-
-The current plan catalog is defined in `backend/services/billing/config/Plans.js`.
-
-| Plan | Price | Credits in plan | Validity configured |
-| --- | ---: | ---: | ---: |
-| Free | ₹0 | 100 | 30 days |
-| Starter | ₹199 | 500 | 30 days |
-| Pro | ₹499 | 1,000 | 30 days |
-
-A newly created user defaults to the Free plan with 100 credits and 100 total credits. On a successful paid-plan update, the purchased credits are added to the user's current credit balance and `totalCredits` is increased. The plan expiry timestamp is set to 30 days from the plan update.
-
-The plan catalog contains a 30-day validity value. In the current code, the expiry timestamp is written when a paid plan is applied; the repository does not currently show a scheduled job that automatically resets or expires credit balances when that date passes.
-
-### Credit Cost by Agent
-
-The credit cost is defined in the authentication service's credit deduction handler.
-
-| Agent operation | Credits per successful deduction |
-| --- | ---: |
-| Chat | 1 |
-| Search | 5 |
-| Coding | 10 |
-| PDF generation or PDF analysis | 10 |
-| PowerPoint generation | 10 |
-| Vision / image understanding | 10 |
-
-### Rate Limits
-
-Rate-limit counters are maintained in Redis on a per-user, per-agent basis. The configured window is 60 seconds.
-
-| Agent category | Maximum requests |
-| --- | ---: |
-| Chat | 20 per minute |
-| Coding | 5 per minute |
-| PDF | 5 per minute |
-| PPT | 5 per minute |
-| Image operations | 5 per minute |
-| Search | 5 per minute |
-
-When the request count exceeds the configured maximum, the rate-limit helper raises an HTTP 429 error with retry information.
-
-### Razorpay Payment Flow
-
-```text
-User selects Starter or Pro
-             |
-             v
-POST /api/billing/create
-             |
-             v
-Backend creates Razorpay order
-             |
-             v
-Payment record saved as created
-             |
-             v
-Razorpay Checkout opens in browser
-             |
-             v
-Razorpay returns order, payment and signature data
-             |
-             v
-POST /api/billing/verify
-             |
-             v
-Backend validates HMAC signature
-             |
-             v
-Payment record updated to paid
-             |
-             v
-User plan and credits updated
-             |
-             v
-Frontend refreshes session data
-```
-
-The backend verifies the Razorpay signature using the configured Razorpay secret before updating the payment and user plan. The frontend uses the public Razorpay key ID to open Checkout; the secret key remains on the server.
-
----
-
-## 🗄️ Database and Storage Design
-
-### MongoDB
-
-The backend creates separate Mongoose connections for four logical application areas. These connection strings can point to separate databases on one MongoDB Atlas cluster or to separately hosted databases.
-
-| Environment variable | Logical database responsibility |
-| --- | --- |
-| `AUTH_MONGODB_URI` | User accounts, plans, and credit balances |
-| `CHAT_MONGODB_URI` | Conversations and messages |
-| `BILLING_MONGODB_URI` | Razorpay payment records |
-| `AGENT_MONGODB_URI` | Agent service database connection |
-
-`backend/shared/mongo.js` provides a reusable connection factory. Each service database config selects its own URI environment variable and caches its Mongoose connection. `backend/loadEnv.js` loads the backend/root environment files and can map a service-local `MONGODB_URI` to the matching service variable when that service-local file is used.
-
-### Redis
-
-Redis is used for:
-
-- Login session data and user-to-session mapping.
-- Recent conversation memory used by the agent workflow.
-- Per-user, per-agent rate-limit counters.
-
-### Qdrant
-
-Qdrant stores vector embeddings created from the extracted text of uploaded PDFs. The current PDF RAG implementation creates a collection name using a timestamp for each processed PDF and performs similarity search over the resulting collection.
-
-### Temporary File Storage
-
-Generated PDFs, PPTX files, and images are saved under a temporary directory created in the operating system's temp folder. The application exposes that directory through `/files` and schedules generated files for deletion after ten minutes.
-
-This is temporary download storage, not permanent object storage. A process restart or a hosting filesystem reset can make temporary downloads unavailable.
-
-### AWS S3 Code
-
-AWS S3 client, upload, and signed-URL helper files are retained in the repository, but their active calls are commented out in the current generation agents. The current Render implementation uses temporary local files instead of uploading generated documents and images to S3.
-
----
-
-## 🔌 API Reference
-
-The current combined Express server mounts the following routes. Protected routes require a valid session cookie.
-
-### Health and Session
-
-| Method | Endpoint | Description | Access |
-| --- | --- | --- | --- |
-| `GET` | `/health` | Render health-check endpoint. | Public |
-| `POST` | `/api/auth/login` | Verify Firebase ID token and create a session. | Public |
-| `GET` | `/api/auth/logout` | Clear the current Redis session and cookie. | Session cookie |
-| `GET` | `/api/me` | Return the current authenticated user's session data. | Protected |
-
-### Chat
-
-| Method | Endpoint | Description | Access |
-| --- | --- | --- | --- |
-| `GET` | `/api/chat/create-conversation` | Create a conversation for the authenticated user. | Protected |
-| `GET` | `/api/chat/get-conversations` | List the user's conversations. | Protected |
-| `POST` | `/api/chat/update-conversation` | Rename, pin/unpin, or archive/unarchive a conversation. | Protected |
-| `POST` | `/api/chat/save-message` | Save a user or assistant message. | Protected |
-| `GET` | `/api/chat/get-messages/:conversationId` | Fetch messages for a conversation. | Protected |
-| `DELETE` | `/api/chat/delete-conversation/:id` | Delete a conversation and its messages. | Protected |
-
-### AI Agent
-
-| Method | Endpoint | Description | Access |
-| --- | --- | --- | --- |
-| `POST` | `/api/agent/chat` | Submit a prompt, selected agent, and optional PDF/image upload. | Protected |
-
-The agent endpoint accepts multipart form data when a file is attached. The form fields include `prompt`, `conversationId`, `agent`, and optional `file`.
-
-### Billing
-
-| Method | Endpoint | Description | Access |
-| --- | --- | --- | --- |
-| `POST` | `/api/billing/create` | Create a Razorpay order for a selected plan. | Protected |
-| `POST` | `/api/billing/verify` | Verify the Razorpay payment signature and apply the plan. | Protected |
-
-The authentication router also contains handlers for internal plan updates and credit deductions that are used by the service logic. They should be treated as backend-internal operations rather than public client APIs.
-
----
-
-## 📁 Project Structure
+The following is a high-level map of the important project directories:
 
 ```text
 NexoraAI/
@@ -852,59 +215,12 @@ NexoraAI/
 ├── .env.example
 ├── .gitignore
 ├── render.yaml
-│
-├── backend/
-│   ├── server.js
-│   ├── loadEnv.js
-│   ├── package.json
-│   ├── docker-compose.yml
-│   │
-│   ├── gateway/
-│   │   ├── index.js
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   └── utils/
-│   │
-│   ├── shared/
-│   │   ├── callHandler.js
-│   │   ├── mongo.js
-│   │   └── redis/
-│   │
-│   └── services/
-│       ├── auth/
-│       │   ├── index.js
-│       │   ├── config/
-│       │   ├── controllers/
-│       │   ├── models/
-│       │   └── routes/
-│       │
-│       ├── chat/
-│       │   ├── index.js
-│       │   ├── config/
-│       │   ├── controllers/
-│       │   ├── models/
-│       │   └── routes/
-│       │
-│       ├── billing/
-│       │   ├── index.js
-│       │   ├── config/
-│       │   ├── controllers/
-│       │   ├── models/
-│       │   └── routes/
-│       │
-│       └── agent/
-│           ├── index.js
-│           ├── agents/
-│           ├── config/
-│           ├── controllers/
-│           ├── graph/
-│           ├── routes/
-│           ├── utils/
-│           └── temp/
+├── README.md
 │
 ├── frontend/
 │   ├── package.json
 │   ├── vite.config.js
+│   ├── index.html
 │   ├── utils/
 │   │   ├── axios.js
 │   │   └── firebase.js
@@ -917,287 +233,783 @@ NexoraAI/
 │       ├── redux/
 │       └── assets/
 │
-└── package-lock.json
+└── backend/
+    ├── package.json
+    ├── server.js
+    ├── loadEnv.js
+    ├── docker-compose.yml
+    │
+    ├── gateway/
+    │   ├── controllers/
+    │   ├── middleware/
+    │   └── utils/
+    │
+    ├── shared/
+    │   ├── callHandler.js
+    │   ├── mongo.js
+    │   └── redis/
+    │
+    └── services/
+        ├── auth/
+        │   ├── config/
+        │   ├── controllers/
+        │   ├── models/
+        │   └── routes/
+        │
+        ├── chat/
+        │   ├── config/
+        │   ├── controllers/
+        │   ├── models/
+        │   └── routes/
+        │
+        ├── billing/
+        │   ├── config/
+        │   ├── controllers/
+        │   ├── models/
+        │   └── routes/
+        │
+        └── agent/
+            ├── agents/
+            ├── config/
+            ├── controllers/
+            ├── graph/
+            ├── routes/
+            ├── utils/
+            └── temp/
 ```
 
-### Important Directories
+### Important folders and files 🗂️
 
-| Path | Responsibility |
+| Path | What it contains |
 | --- | --- |
-| `frontend/src/components/` | Chat UI, sidebar, composer, message renderer, billing drawer, and artifact panel. |
-| `frontend/src/features/` | API calls for authentication, conversations, messages, billing, and agent requests. |
-| `frontend/src/redux/` | Redux store and user, conversation, and message state slices. |
-| `frontend/utils/` | Axios client and Firebase browser configuration. |
-| `backend/server.js` | Combined production Express entry point used by Render. |
-| `backend/loadEnv.js` | Loads environment files and maps service database variables. |
-| `backend/shared/` | Shared MongoDB connection factory, Redis client, and in-process controller-call helper. |
-| `backend/gateway/` | Original gateway module, including session middleware and user-session endpoint. |
-| `backend/services/auth/` | Firebase token verification, user model, sessions, plans, and credit operations. |
-| `backend/services/chat/` | Conversation and message models, controllers, and routes. |
-| `backend/services/billing/` | Plan catalog, Razorpay integration, payment model, and payment verification. |
-| `backend/services/agent/agents/` | Individual AI agent implementations. |
-| `backend/services/agent/graph/` | LangGraph state, router, nodes, and workflow edges. |
-| `backend/services/agent/config/` | Model providers, Redis, embeddings, Qdrant, Tavily, uploads, and rate limits. |
-| `backend/services/agent/utils/` | Credit deduction, PDF/PPT builders, message retrieval, and temporary file helpers. |
-| `render.yaml` | Render web service and Redis deployment blueprint. |
+| `frontend/src/components/` | Reusable interface elements such as chat, sidebar, composer, and artifact views. |
+| `frontend/src/features/` | Frontend feature/API logic. |
+| `frontend/src/redux/` | Redux store and state slices. |
+| `frontend/utils/axios.js` | Axios instance; includes cookies with `withCredentials: true`. |
+| `frontend/utils/firebase.js` | Firebase browser app and Google provider initialization. |
+| `backend/server.js` | Main Express server, middleware, route mounting, health check, static frontend, and file serving. |
+| `backend/loadEnv.js` | Loads backend/root environment files and maps service-local MongoDB values. |
+| `backend/gateway/middleware/` | Request authentication protection. |
+| `backend/shared/` | Shared database and internal service helpers. |
+| `backend/services/auth/` | Authentication, user, plan, and credit logic. |
+| `backend/services/chat/` | Conversation/message models and controllers. |
+| `backend/services/billing/` | Payment records, Razorpay integration, and billing routes. |
+| `backend/services/agent/agents/` | Individual specialist agents. |
+| `backend/services/agent/graph/` | LangGraph state, router, and workflow. |
+| `backend/services/agent/config/` | Model, memory, Redis, embedding, Qdrant, Tavily, upload, and limits configuration. |
+| `backend/services/agent/utils/` | PDF/PPT generation, credit handling, and generated-file helpers. |
+| `render.yaml` | Render service blueprint. |
 
----
+## 7. Prerequisites ✅
 
-## ⚙️ Environment Variables
+Install the following before starting local development:
 
-The repository includes a root `.env.example` file. Copy it to `backend/.env` for local backend development and fill in the required values. Never commit real credentials or private keys.
+1. **Node.js 20 or newer.** Node 22 is configured in the Render blueprint.
+2. **npm**, included with Node.js.
+3. **Git**, to clone the repository.
+4. A **MongoDB** database or MongoDB Atlas cluster.
+5. A **Redis** instance.
+6. A **Firebase project** with Authentication configured.
+7. API credentials for the AI providers and integrations used by the features you plan to run.
+8. A **Qdrant** endpoint and key for PDF RAG.
+9. **Razorpay** test credentials to test billing.
 
-### Backend Variables
+You do not need to configure every external provider to start the frontend and backend, but a feature that depends on an unconfigured integration will not work.
 
-| Variable | Purpose |
-| --- | --- |
-| `AUTH_MONGODB_URI` | MongoDB connection string for user/auth data. |
-| `CHAT_MONGODB_URI` | MongoDB connection string for conversations and messages. |
-| `BILLING_MONGODB_URI` | MongoDB connection string for payment records. |
-| `AGENT_MONGODB_URI` | MongoDB connection string used by the agent service database connection. |
-| `REDIS_URL` | Redis connection URL. |
-| `FIREBASE_SERVICE_ACCOUNT` | Firebase Admin service-account JSON, supplied as an environment variable. |
-| `FRONTEND_URL` | Allowed frontend origin for CORS. For local Vite development, use `http://localhost:5173`. |
-| `GOOGLE_API_KEY` | Google Gemini model and embedding access. |
-| `GROQ_API_KEY` | Groq model access. |
-| `OPENROUTER_API_KEY` | OpenRouter coding model access. |
-| `TAVILY_API_KEY` | Tavily web-search access. |
-| `QDRANT_URL` | Qdrant endpoint for PDF vector search. |
-| `QDRANT_API_KEY` | Qdrant API key. |
-| `RAZORPAY_KEY_ID` | Razorpay server-side key ID. |
-| `RAZORPAY_KEY_SECRET` | Razorpay server-side secret used for order/payment operations and signature verification. |
+## 8. Local Setup ⚙️
 
-The `.env.example` also contains commented AWS variables. They are retained for the older S3 deployment path and are not required by the active Render file-storage implementation.
+Follow these steps in order.
 
-### Frontend Variables
+### Step 1 — Clone the repository 📥
 
-Create `frontend/.env` for the Vite build:
-
-| Variable | Purpose |
-| --- | --- |
-| `VITE_FIREBASE_API_KEY` | Firebase web API key used by the browser SDK. |
-| `VITE_RAZORPAY_KEY_ID` | Public Razorpay key ID used to open Checkout. |
-| `VITE_SERVER_URL` | Backend base URL. Use `http://localhost:8000` for local split frontend/backend development. Leave empty when frontend and API share the same host in production. |
-
-Only frontend values with the `VITE_` prefix are exposed to the browser build. Do not put private service-account JSON, database passwords, provider secrets, or Razorpay secret keys in frontend environment variables.
-
----
-
-## 🚀 Run the Project Locally
-
-### Prerequisites
-
-- Node.js 20 or newer. Node.js 22 is the version configured for the Render deployment.
-- npm.
-- MongoDB instance with separate database connection strings for the application areas.
-- Redis instance.
-- Firebase project configured for Google Authentication and a Firebase Admin service account.
-- API credentials for the AI/search/vector/payment services used by the features you want to test.
-
-### 1. Clone the Repository
+Open PowerShell, Windows Terminal, or a shell and run:
 
 ```bash
 git clone https://github.com/VikasKumar281/NexoraAI.git
 cd NexoraAI
 ```
 
-### 2. Install Backend Dependencies
+This downloads the source code and moves your terminal into the project root.
+
+### Step 2 — Install backend dependencies 📦
+
+From the repository root:
 
 ```bash
 npm install --prefix backend
 ```
 
-### 3. Configure the Backend Environment
+This installs packages from `backend/package.json`. The backend uses ES modules, as indicated by `"type": "module"`.
 
-On Windows PowerShell:
+### Step 3 — Create the backend environment file 📝
+
+The repository contains a root `.env.example`. Copy it into the backend directory.
+
+**Windows PowerShell:**
 
 ```powershell
 Copy-Item .env.example backend/.env
 ```
 
-On macOS/Linux:
+**macOS / Linux:**
 
 ```bash
 cp .env.example backend/.env
 ```
 
-Open `backend/.env` and configure the database, Redis, Firebase Admin, AI provider, Qdrant, and Razorpay values.
+Open `backend/.env` in your editor. Add your own connection strings and secrets. The next section explains each variable.
 
-For local development, set the frontend CORS origin to the Vite development URL:
+### Step 4 — Set up MongoDB 🍃
+
+Create the required databases or connection strings. The application reads four logical MongoDB connection variables:
+
+- `AUTH_MONGODB_URI` — user and authentication data.
+- `CHAT_MONGODB_URI` — conversation and message data.
+- `BILLING_MONGODB_URI` — payment data.
+- `AGENT_MONGODB_URI` — agent service data.
+
+They can refer to separate databases within one MongoDB Atlas cluster, or to separately hosted databases. Make sure the database network access rules allow your local machine or deployment host to connect.
+
+Example format (replace with your own values):
 
 ```env
-FRONTEND_URL=http://localhost:5173
+AUTH_MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<auth_database>
+CHAT_MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<chat_database>
+BILLING_MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<billing_database>
+AGENT_MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<agent_database>
 ```
 
-If Redis is running locally, its URL can be configured as:
+Do not paste real credentials into source code or commit them.
+
+### Step 5 — Set up Redis ⚡
+
+Create a Redis instance and put its connection URL in `backend/.env`.
+
+For a local Redis server, the usual local URL is:
 
 ```env
 REDIS_URL=redis://localhost:6379
 ```
 
-### 4. Configure the Frontend Environment
+For a managed Redis provider, use the provider's TLS or non-TLS connection URL exactly as supplied. The app uses Redis-backed functionality such as session/memory/rate-limit support; the exact required behavior depends on the route or agent being exercised.
+
+### Step 6 — Configure Firebase Authentication 🔥
+
+1. Open the Firebase Console.
+2. Create or select a Firebase project.
+3. Enable the sign-in provider used by the application (Google Authentication).
+4. Register a Web App in the Firebase project.
+5. Copy the Web API key into the frontend environment file in Step 7.
+6. Generate a Firebase Admin service-account credential from the Firebase project settings.
+7. Supply the service-account JSON securely to the backend through `FIREBASE_SERVICE_ACCOUNT`.
+
+The frontend uses the Firebase Web SDK. The backend uses Firebase Admin to verify the ID token before establishing the application session.
+
+Keep the Admin service-account private key secret. Never place it in a `VITE_*` variable.
+
+### Step 7 — Configure the frontend environment 🎨
 
 Create `frontend/.env`:
 
 ```env
 VITE_FIREBASE_API_KEY=your_firebase_web_api_key
-VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
+VITE_RAZORPAY_KEY_ID=your_razorpay_public_key_id
 VITE_SERVER_URL=http://localhost:8000
 ```
 
-Use values from your own Firebase and Razorpay projects. The Firebase web configuration also contains the project's public Firebase identifiers in `frontend/utils/firebase.js`.
+Explanation:
 
-### 5. Start the Backend
+- `VITE_FIREBASE_API_KEY` configures the Firebase browser SDK.
+- `VITE_RAZORPAY_KEY_ID` is the public key ID used by the browser checkout flow.
+- `VITE_SERVER_URL` tells Axios where the API is hosted. For local development, use port 8000.
 
-Open a terminal at the repository root and run:
+Vite exposes variables prefixed with `VITE_` in the browser bundle. Never put private API keys, database credentials, Firebase Admin JSON, or Razorpay secret keys in frontend variables.
+
+### Step 8 — Configure AI and integration providers 🧠
+
+Add only the credentials for the features you intend to test. See the environment-variable table below.
+
+- Chat and several general model operations use Groq.
+- Coding uses OpenRouter in the current model configuration.
+- Image analysis uses Google Gemini.
+- Web search uses Tavily.
+- PDF RAG uses Google embeddings/model access and Qdrant.
+- Billing uses Razorpay.
+
+The current model factory and agent code determine which provider is used for each workflow. A missing key may cause that specific operation to fail even if the application starts successfully.
+
+### Step 9 — Check the environment files 🔍
+
+Before starting, confirm:
+
+- `backend/.env` exists and contains server-side values.
+- `frontend/.env` exists and contains the required public Vite values.
+- MongoDB connection strings are correct and accessible.
+- Redis is reachable.
+- Firebase Web and Admin configuration belong to the intended project.
+- Provider keys are valid.
+- No secret file is being staged for Git.
+
+## 9. Environment Variables 🔐
+
+The repository's `.env.example` is the environment-variable reference. Use it as the starting point.
+
+### Backend ⚙️ variables
+
+| Variable | Required for | Description |
+| --- | --- | --- |
+| `AUTH_MONGODB_URI` | Auth | MongoDB connection string for authentication and user records. |
+| `CHAT_MONGODB_URI` | Chat | MongoDB connection string for conversations and messages. |
+| `BILLING_MONGODB_URI` | 💳 Billing | MongoDB connection string for payment records. |
+| `AGENT_MONGODB_URI` | Agent | MongoDB connection string for the agent module. |
+| `REDIS_URL` | Redis-backed functionality | Redis connection URL. |
+| `FIREBASE_SERVICE_ACCOUNT` | Login | Firebase Admin service-account JSON value. |
+| `FRONTEND_URL` | CORS | Allowed frontend origin. For local frontend/backend development, use `http://localhost:5173`; when using the combined same-origin setup, configure the deployed origin as appropriate. |
+| `GOOGLE_API_KEY` | Gemini / embeddings | Google AI API key. |
+| `GROQ_API_KEY` | Groq models | Groq API key. |
+| `OPENROUTER_API_KEY` | Coding model | OpenRouter API key. |
+| `TAVILY_API_KEY` | 🔎 Web Search | Tavily API key. |
+| `QDRANT_URL` | 📚 PDF RAG | Qdrant endpoint URL. |
+| `QDRANT_API_KEY` | 📚 PDF RAG | Qdrant API key. |
+| `RAZORPAY_KEY_ID` | 💳 Billing | Razorpay server-side key ID. |
+| `RAZORPAY_KEY_SECRET` | 💳 Billing | Razorpay secret used by the backend for payment operations and signature verification. |
+
+### Frontend 💻 variables
+
+| Variable | Description |
+| --- | --- |
+| `VITE_FIREBASE_API_KEY` | Firebase Web API key. |
+| `VITE_RAZORPAY_KEY_ID` | Public Razorpay key ID for checkout. |
+| `VITE_SERVER_URL` | Backend base URL. Use `http://localhost:8000` locally. Keep empty when the frontend and API are served by the same host. |
+
+### Optional / legacy AWS values ☁️
+
+The example environment file includes commented AWS variables:
+
+- `AWS_REGION`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_KEY`
+- `AWS_BUCKET_NAME`
+
+S3 helper code is present, but the current PDF/PPT/image generation agents save files to the server's temporary directory. These AWS values are not required by the active local/Render file-generation path.
+
+## 10. Run the Application ▶️
+
+Start the frontend and backend in separate terminals.
+
+### Terminal 1 — Start the backend 🚀
+
+From the repository root:
 
 ```bash
 npm run dev --prefix backend
 ```
 
-The backend starts on port `8000` by default. The port can be overridden by the `PORT` environment variable.
+The backend's development script uses Node's watch mode. The default local port is **8000** unless overridden by `PORT`.
 
-### 6. Start the Frontend
+You should see a log similar to:
 
-Open a second terminal at the repository root and run:
+```text
+NexoraAI listening on 8000
+```
+
+### Terminal 2 — Install frontend dependencies 📦
+
+From the repository root:
 
 ```bash
 npm install --prefix frontend
+```
+
+### Terminal 2 — Start the frontend 🌐
+
+```bash
 npm run dev --prefix frontend
 ```
 
-Vite prints the local development URL in the terminal. Open that URL in your browser.
+Vite prints the local development URL in the terminal, commonly:
 
-### 7. Test the Main Flows
+```text
+http://localhost:5173
+```
 
-1. Sign in with a Google account.
-2. Send a normal chat message.
-3. Switch to Coding and ask for a small project to test generated artifacts.
-4. Use Search for a current-information query.
-5. Select PDF or PPT to test document generation.
-6. Attach a PDF in Auto mode and ask a question about it.
-7. Attach an image in Auto mode and ask the assistant to analyze it.
-8. Open the Billing drawer to test plan selection using Razorpay test credentials.
+Open the URL printed by Vite in your browser.
 
-Some features require their respective external API keys and services. For example, PDF RAG requires both Google embeddings access and Qdrant configuration.
+### Build the frontend 🏗️
 
----
+To create a production build:
 
-## ☁️ Deployment on Render
+```bash
+npm run build --prefix frontend
+```
 
-The repository contains a `render.yaml` blueprint for the current deployment design.
+Vite writes the production bundle to `frontend/dist`. The combined backend server serves this folder in production.
 
-### Render Services
+### Run backend in production mode locally ✅
 
-The blueprint declares:
+After building the frontend:
+
+```bash
+npm start --prefix backend
+```
+
+The backend start script runs `node server.js`.
+
+## 11. AI Agent Workflows 🤖
+
+NexoraAI uses a LangGraph state graph. The workflow begins at the router node, then follows the route selected for the current request.
+
+### 11.1 Automatic routing 🧭
+
+When the agent field is `auto` or no specific agent has been selected, the router checks the uploaded file and prompt.
+
+Current routing behavior includes:
+
+| Input | Selected agent |
+| --- | --- |
+| Uploaded PDF | `pdfRag` |
+| Uploaded image | `imageAnalyzer` |
+| Prompt asking for slides or a presentation | `ppt` |
+| Prompt asking to generate a PDF | `pdf` |
+| Prompt asking for current/latest information | `search` |
+| Prompt containing common coding/debugging terms | `coding` |
+| Simple greeting | `chat` |
+| Other prompts | Model-assisted routing, with chat as the workflow fallback |
+
+If a user explicitly selects an agent other than `auto`, the router keeps that selection.
+
+### 11.2 Chat Agent 💬
+
+**Purpose:** General-purpose conversation and explanations.
+
+Flow:
+
+1. Checks the configured chat usage limit.
+2. Loads recent conversation memory from Redis-backed agent memory.
+3. Builds the system and conversation messages.
+4. Invokes the configured chat model.
+5. Deducts the relevant credits.
+6. Returns the assistant response to the agent controller.
+
+### 11.3 Search Agent 🔎
+
+**Purpose:** Retrieve current information from the web.
+
+Flow:
+
+1. Checks the user's search-agent limit.
+2. Sends the prompt to the configured Tavily search tool.
+3. Compacts the answer and a small number of search results.
+4. Deducts credits.
+5. Passes search context to the chat agent for the final user-facing answer.
+
+Search requires a valid `TAVILY_API_KEY`.
+
+### 11.4 Coding Agent 💻
+
+**Purpose:** Code generation, code review, explanations, debugging, conversion, and documentation.
+
+Flow:
+
+1. Checks the coding-agent limit.
+2. Classifies the requested coding task.
+3. For project generation, asks the coding model to return structured project files.
+4. Parses the model response and returns the generated files as an artifact.
+5. For other coding tasks, returns a Markdown explanation or code-focused answer.
+6. Deducts credits.
+
+The current code-generation prompt defines a default HTML/CSS/JavaScript project structure unless another framework is explicitly requested.
+
+### 11.5 PDF Agent 📄
+
+**Purpose:** Create a PDF document from a topic.
+
+Flow:
+
+1. Checks the PDF-agent limit.
+2. Asks the configured model to create structured document content.
+3. Parses the generated content.
+4. Builds a PDF using PDFKit.
+5. Saves it in temporary local storage.
+6. Returns a download link.
+
+The generated file link is temporary and is configured to expire after approximately ten minutes.
+
+### 11.6 PowerPoint Agent 📊
+
+**Purpose:** Generate a PowerPoint presentation.
+
+Flow:
+
+1. Checks the presentation-agent limit.
+2. Asks the model to produce slide content in a structured format.
+3. Builds a PPTX file using PptxGenJS.
+4. Saves it in temporary local storage.
+5. Returns a download link.
+
+The current prompt requests six content slides. The generated download link is temporary.
+
+### 11.7 Vision Agent — Image Generation 🎨
+
+**Purpose:** Generate an image from a text description.
+
+Flow:
+
+1. Checks the image-generation usage limit.
+2. Converts the user's request into a detailed image prompt.
+3. Requests an image from the configured image-generation endpoint.
+4. Saves the returned image in temporary local storage.
+5. Returns an image preview and download link.
+
+### 11.8 PDF RAG Agent 📚
+
+**Purpose:** Answer questions using an uploaded PDF as the source.
+
+RAG means **Retrieval-Augmented Generation**. Instead of asking the language model to answer from general knowledge alone, the application retrieves relevant pieces of the uploaded document and provides them as context.
+
+Flow:
+
+1. The user uploads a PDF with the question.
+2. Multer receives the file.
+3. The PDF parser extracts its text.
+4. A text splitter divides the document into chunks, with overlap between neighboring chunks.
+5. The application creates embeddings and stores the chunks in a timestamp-named Qdrant collection.
+6. Similarity search retrieves the most relevant chunks for the user's question.
+7. The retrieved text is passed to the model as context.
+8. The model is instructed to answer from the uploaded PDF and avoid unsupported claims.
+9. The temporary uploaded PDF is removed in the agent's cleanup step.
+
+This workflow requires PDF parsing, Google model/embedding access, and Qdrant configuration.
+
+### 11.9 Image Analyzer Agent 🖼️
+
+**Purpose:** Understand an uploaded image.
+
+Flow:
+
+1. The user uploads an image and asks a question.
+2. Multer receives the image.
+3. The agent reads the image and converts it to Base64.
+4. The image and prompt are sent to the configured Gemini model.
+5. The model returns the analysis.
+6. The temporary upload is removed in the cleanup step.
+
+It can be used for visible text, charts, tables, and general image understanding. Results depend on the clarity of the input image and model capability.
+
+## 12. API Reference 🔌
+
+The active API routes are mounted by `backend/server.js`. Protected routes require a valid session cookie.
+
+### Health and user ❤️
+
+| Method | Endpoint | Access | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/health` | Public | Health-check response. |
+| `POST` | `/api/auth/login` | Public | Verify Firebase ID token and establish a session. |
+| `GET` | `/api/auth/logout` | Session | Clear the current session. |
+| `GET` | `/api/me` | Protected | Return the current authenticated user. |
+
+### Chat 💬
+
+| Method | Endpoint | Access | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/api/chat/create-conversation` | Protected | Create a conversation. |
+| `GET` | `/api/chat/get-conversations` | Protected | List conversations for the current user. |
+| `POST` | `/api/chat/update-conversation` | Protected | Update conversation metadata. |
+| `POST` | `/api/chat/save-message` | Protected | Save a message. |
+| `GET` | `/api/chat/get-messages/:conversationId` | Protected | Fetch messages for a conversation. |
+| `DELETE` | `/api/chat/delete-conversation/:id` | Protected | Delete a conversation. |
+
+### Agent 🤖
+
+| Method | Endpoint | Access | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/api/agent/chat` | Protected | Run an AI agent. |
+
+The agent route accepts multipart form data. Its fields include:
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `prompt` | Text | User's instruction or question. |
+| `conversationId` | Text | Conversation to associate with the request. |
+| `agent` | Text | Agent selection, including `auto` where supported. |
+| `file` | File | Optional PDF or image upload; use this exact field name. |
+
+### Billing 💳
+
+| Method | Endpoint | Access | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/api/billing/create` | Protected | Create a Razorpay order. |
+| `POST` | `/api/billing/verify` | Protected | Verify the payment response and signature. |
+
+### Example: check backend health
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response:
+
+```json
+{
+  "ok": true
+}
+```
+
+Protected endpoints require the authenticated session cookie. Use the application's login flow or an authorized test session rather than treating these routes as public APIs.
+
+## 13. Data, Sessions, and File Storage 🗄️
+
+### MongoDB 🍃
+
+The backend uses separate Mongoose connections for the four logical data areas:
+
+| Environment variable | Data responsibility |
+| --- | --- |
+| `AUTH_MONGODB_URI` | Authentication and user-related records. |
+| `CHAT_MONGODB_URI` | Conversations and messages. |
+| `BILLING_MONGODB_URI` | Payment records. |
+| `AGENT_MONGODB_URI` | Agent service data. |
+
+### Redis ⚡
+
+Redis supports application features such as session state, recent agent conversation memory, and per-user/per-agent rate-limit counters.
+
+### Qdrant 🧠
+
+Qdrant stores vector representations of extracted PDF text for retrieval. The PDF RAG agent currently creates a timestamp-based collection name when processing a PDF. Review collection retention and cleanup when operating the application at scale.
+
+### Generated files 📦
+
+Generated PDFs, PPTX files, and images are saved to a temporary directory on the server. The backend exposes this directory through:
+
+```text
+/files
+```
+
+The generated-file helper schedules downloads for deletion after approximately ten minutes. Treat these links as short-lived. Temporary local storage is not a substitute for persistent object storage; files may disappear when an instance restarts or its filesystem is replaced.
+
+### S3 note ☁️
+
+AWS S3 client and helper modules are present in the repository, but the current PDF, PPT, and image generation agents use local temporary storage. The current Render configuration does not require AWS credentials for those generation flows.
+
+## 14. Deployment on Render ☁️
+
+The repository includes a `render.yaml` blueprint.
+
+### Deployment architecture 🏗️
+
+The current blueprint defines:
 
 | Service | Type | Purpose |
 | --- | --- | --- |
-| `nexora-redis` | Key Value | Redis for sessions, memory cache, and rate limiting. |
-| `nexoraai` | Node web service | Runs the combined backend and serves the built frontend. |
+| `nexora-redis` | Key Value | Redis used by the application. |
+| `nexoraai` | Node web service | Runs the combined Express backend and serves the built frontend. |
 
-Both services are configured for the Singapore region in the blueprint. The configuration declares the `free` plan; actual availability and platform limits are controlled by Render and can change over time.
+The blueprint currently specifies the Singapore region and the Render free plan. Render product availability, quotas, sleep behavior, and pricing can change; check the current Render dashboard and pricing before relying on a free deployment.
 
-### Build Command
+### Step 1 — Push your latest code to GitHub 📤
 
-The Render blueprint uses:
+Make sure your project changes are committed and pushed to the repository's deployment branch.
+
+```bash
+git add .
+git commit -m "Prepare NexoraAI for deployment"
+git push origin main
+```
+
+Do not add `.env`, private keys, service-account JSON, or credentials to Git.
+
+### Step 2 — Create a Render account 👤
+
+1. Open [Render](https://render.com/).
+2. Sign in or create an account.
+3. Connect the GitHub account that contains NexoraAI.
+
+### Step 3 — Create a Blueprint deployment 🧩
+
+1. In the Render dashboard, choose the option to create a new Blueprint.
+2. Select the NexoraAI repository.
+3. Select the branch containing `render.yaml`.
+4. Allow Render to read the blueprint.
+5. Review the services and settings before applying the deployment.
+
+### Step 4 — Configure environment variables 🔐
+
+The blueprint marks secrets and provider configuration as dashboard-managed values using `sync: false`.
+
+Open the `nexoraai` web service's environment settings and add the values required by the application:
+
+- Four MongoDB connection strings.
+- Firebase Admin service account.
+- Firebase frontend API key.
+- Groq, Google, OpenRouter, and Tavily credentials as required.
+- Qdrant URL and API key.
+- Razorpay key ID and secret.
+
+The blueprint connects the Redis service's connection string to `REDIS_URL`.
+
+**Important:** The Vite `VITE_*` variables are used during the frontend build. Set them in the Render service environment before the build runs. If you change a Vite variable later, trigger a new deployment/build so the generated frontend bundle contains the updated value.
+
+### Step 5 — Understand the build command 🏗️
+
+The Render blueprint currently runs:
 
 ```bash
 npm install --omit=dev --prefix backend && npm install --include=dev --prefix frontend && npm run build --prefix frontend
 ```
 
-This installs backend production dependencies, installs the frontend build dependencies, and creates the production frontend bundle.
+This:
 
-### Start Command
+1. Installs backend production dependencies.
+2. Installs frontend dependencies, including build tools.
+3. Builds the React application with Vite.
+4. Produces the `frontend/dist` directory.
+
+### Step 6 — Understand the start command ▶️
+
+The configured start command is:
 
 ```bash
 node backend/server.js
 ```
 
-The combined server:
+The server:
 
 1. Loads environment variables.
-2. Creates the temporary file directory.
-3. Configures Express, cookie parsing, CORS, JSON parsing, and request logging.
-4. Connects to the four MongoDB databases when API requests arrive.
-5. Mounts authentication, chat, billing, and agent routes.
-6. Serves generated downloads from `/files`.
-7. Serves the compiled React application from `frontend/dist`.
-8. Listens on `0.0.0.0` using Render's `PORT` environment variable.
+2. Creates the generated-file directory.
+3. Configures Express middleware and CORS.
+4. Exposes the `/health` endpoint.
+5. Connects to the MongoDB databases when API routes are requested.
+6. Mounts Auth, Chat, Billing, and Agent routes.
+7. Serves temporary generated files under `/files`.
+8. Serves the compiled frontend from `frontend/dist`.
+9. Listens on the port supplied by Render's `PORT` environment variable.
 
-### Health Check
+### Step 7 — Verify the deployment ✅
 
-Render is configured to call:
+After the deployment succeeds:
 
-```text
-GET /health
+1. Open the Render service URL.
+2. Confirm that the frontend loads.
+3. Open `/health` on the deployed host and confirm that it returns `{"ok":true}`.
+4. Test Google login.
+5. Send a basic chat prompt.
+6. Test each provider-backed feature only after its credentials are configured.
+7. Check the Render logs if an API request fails.
+
+### Deployment considerations ⚠️
+
+- The frontend and API share a host in this deployment, so `VITE_SERVER_URL` can remain empty.
+- Configure CORS using the correct frontend origin for the deployment.
+- Keep database and provider secrets in Render environment settings, not in Git.
+- Temporary generated files are not durable across instance restarts.
+- A free service may have limits or become unavailable under current platform rules. Confirm current service limits before using it for production workloads.
+
+## 15. Troubleshooting 🛠️
+
+### Backend ⚙️ does not start
+
+Check:
+
+1. Node.js is version 20 or newer.
+2. You installed backend dependencies.
+3. `backend/.env` exists.
+4. The terminal is running commands from the repository root.
+5. Port 8000 is not already occupied.
+
+Run:
+
+```bash
+npm install --prefix backend
+npm run dev --prefix backend
 ```
 
-The endpoint returns a successful JSON response when the Express application is reachable.
+### MongoDB 🍃 connection error
 
-### Configure Render Environment Variables
+- Check each MongoDB URI for spelling and database name.
+- Confirm the database user and password.
+- Confirm the network/IP access list in MongoDB Atlas.
+- URL-encode special characters in the MongoDB password.
+- Confirm that the four logical database variables are set.
 
-The Render blueprint marks provider credentials and database connection strings as dashboard-managed values (`sync: false`). Add the required values in the Render service settings. The Redis connection string is linked from the `nexora-redis` Key Value service by the blueprint.
+### Redis ⚡ connection error
 
-Remember that the `VITE_` variables are needed during the frontend build because Vite embeds them into the generated browser bundle.
+- Check `REDIS_URL`.
+- Confirm that the Redis instance is running and reachable.
+- Check whether the provider requires TLS.
+- Confirm the deployment environment is using the correct connection URL.
 
----
+### Login fails 🔑
 
-## 🧱 Earlier Microservices Deployment Design
+- Confirm the Firebase Web API key is set in `frontend/.env`.
+- Confirm that the Firebase Admin service-account JSON is set in `FIREBASE_SERVICE_ACCOUNT`.
+- Confirm Google sign-in is enabled in Firebase Authentication.
+- Check the backend logs for token-verification errors.
+- Confirm the frontend origin and credentialed CORS settings.
 
-The backend was initially structured so its main responsibilities could run as separate services. Each service has its own folder, entry point, routes, controllers, configuration, package files, and Dockerfile where applicable.
+### AI agent fails 🤖
 
-| Service | Original responsibility |
-| --- | --- |
-| Gateway | Validate session cookies, protect API requests, and forward the user ID to downstream services. |
-| Auth | Verify Firebase tokens, create users and sessions, manage plans, and deduct credits. |
-| Chat | Create conversations, save messages, update conversation metadata, and return chat history. |
-| Billing | Create Razorpay orders, store payment records, and verify payments. |
-| Agent | Route prompts through LangGraph and execute specialist AI agents. |
+- Confirm the API key for the provider used by that agent.
+- Confirm the relevant service is reachable.
+- Check the backend logs for provider errors or rate limits.
+- Confirm that the required integration is configured (for example, Tavily for search and Qdrant for PDF RAG).
 
-The individual service entry points are retained in the repository. The current Render production path uses `backend/server.js` instead of starting five separate application containers.
+### Uploaded file is not processed 📎
 
-`backend/shared/callHandler.js` supports in-process calls to controller functions when a separate service URL is not configured. The agent and billing code can also use HTTP service URLs when the corresponding environment variables are provided. This allows the codebase to retain a modular service design while using a combined process for the current deployment.
+- Use the field name `file` in multipart form data.
+- Check that the file type is supported by the route/agent.
+- Check upload size and provider limits.
+- For PDF RAG, confirm that Google embedding/model access and Qdrant are configured.
+- For image analysis, confirm that the selected model supports image input.
 
----
+### Frontend 💻 cannot reach the API
 
-## 📝 Implementation Notes
+- For local development, set `VITE_SERVER_URL=http://localhost:8000`.
+- Restart Vite after changing `.env`.
+- Confirm the backend is running on port 8000.
+- Confirm credentialed CORS allows the frontend origin.
+- When frontend and backend share one production host, use an empty `VITE_SERVER_URL` to use same-origin API paths.
 
-- **Voice input is browser-based.** It relies on SpeechRecognition support and microphone permission; it is not a live voice assistant.
-- **Uploaded files are temporary.** PDF and image uploads are processed from a temporary directory and removed by the agent cleanup logic.
-- **Generated files are temporary.** PDF, PPTX, and image downloads are scheduled for deletion after ten minutes.
-- **S3 is not active in the current Render path.** The S3 helper files remain in the repository, but the current generation agents save files locally.
-- **PDF RAG uses Qdrant.** It creates timestamped collections for document content; the current flow does not show a collection cleanup job.
-- **Plan expiry is recorded but not automatically enforced by a scheduler in the current repository.** The plan definitions specify 30 days and paid plan updates write `planExpiresAt`, but no scheduled expiry/reset worker is present in the inspected code.
-- **Stopping a response is client-side abort.** The frontend aborts its request with an `AbortController`; it does not establish that the provider's server-side model execution is cancelled.
-- **Some features need external credentials.** A successful local build alone does not verify Firebase, AI providers, Tavily, Qdrant, Razorpay, MongoDB, or Redis connectivity.
+### Generated download link does not work 📥
 
----
+Generated links are temporary and expire after approximately ten minutes. Generate the file again. The current implementation uses local temporary storage, not persistent object storage.
 
-## 🔭 Future Improvements
+## 16. Security Notes 🔒
 
-Potential areas for further development include:
+- Never commit `.env` files, passwords, API keys, or private service-account credentials.
+- Never expose `FIREBASE_SERVICE_ACCOUNT`, `RAZORPAY_KEY_SECRET`, database credentials, or provider secrets in frontend variables.
+- Only browser configuration values intended to be public should use the `VITE_` prefix.
+- Use HTTPS in deployed environments.
+- Restrict database network access to trusted hosts whenever possible.
+- Use Razorpay test credentials while testing payments.
+- Treat uploaded files and generated download URLs as temporary user data.
+- Review authentication, authorization, upload validation, rate limiting, and retention policies before public production use.
 
-- Add automated cleanup for old Qdrant PDF collections.
-- Add scheduled plan-expiry handling and a clear renewal/reset policy.
-- Add server-side cancellation propagation for long-running agent requests.
-- Add persistent object storage for generated files when longer download availability is required.
-- Add automated tests for authentication, billing verification, conversation ownership, and agent routing.
-- Add request tracing and structured logs across the service modules.
-- Add model/provider fallback handling and clearer user-facing errors for provider outages.
-- Add pagination for long conversation histories.
+## 17. Future Improvements 🚧
 
----
+Possible next steps for the project include:
 
-## 👨‍💻 Author
+- Add automated tests for authentication, conversation ownership, agent routing, and payment verification.
+- Add background cleanup for unused Qdrant collections.
+- Add persistent object storage for generated files.
+- Add monitoring and structured request tracing across agent workflows.
+- Add robust model/provider fallback and retry strategies.
+- Add pagination and retention policies for long conversations.
+- Add automated plan-expiry and credit-renewal processing.
+- Add request cancellation that propagates to long-running model operations.
+- Add API documentation generated from a maintained OpenAPI specification.
 
-**Vikas Kumar**  
-GitHub: [@VikasKumar281](https://github.com/VikasKumar281)
+## 18. Author 👨‍💻
+
+**Vikas Kumar**
+
+- GitHub: [@VikasKumar281](https://github.com/VikasKumar281)
+- Repository: [NexoraAI](https://github.com/VikasKumar281/NexoraAI)
 
 ---
 
 <p align="center">
-  Built with React, Node.js, LangGraph, MongoDB, Redis, and AI provider integrations.
-  <br />
-  <strong>NexoraAI — One workspace for multiple AI workflows.</strong>
+  <strong>NexoraAI</strong><br />
+  One workspace. Multiple AI workflows.
 </p>
