@@ -47,6 +47,7 @@ function SideBar() {
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [menuId, setMenuId] = useState(null);
+  const [menuPos, setMenuPos] = useState(null);
   const [rename, setRename] = useState(null);
   const [railPanel, setRailPanel] = useState(null);
 
@@ -83,6 +84,7 @@ function SideBar() {
   const handleDeleteConversation = async (event, id) => {
     event.stopPropagation();
     setMenuId(null);
+    setMenuPos(null);
     const deletingOpenChat = selectedConversation?._id == id;
     if (deletingOpenChat) {
       dispatch(setActiveConversationId(null));
@@ -110,6 +112,7 @@ function SideBar() {
       dispatch(setSelectedConversation(next || null));
     }
     setMenuId(null);
+    setMenuPos(null);
   };
 
   const saveRename = async (event) => {
@@ -157,7 +160,7 @@ function SideBar() {
     const railSearch = (conversations || []).filter(named).sort(byUpdated);
 
     return (
-      <div className="hidden lg:flex flex-col items-center w-14 h-screen bg-[#0d0f14] border-r border-white/6 py-4 gap-1 shrink-0">
+      <div className="hidden lg:flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-white/6 bg-[#0d0f14] py-4">
         <button
           className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-colors duration-150 bg-transparent border-none cursor-pointer"
           onClick={() => { setRailPanel(null); setCollapsed(false); }}
@@ -178,7 +181,7 @@ function SideBar() {
         {railPanel && (
           <>
             <div className="fixed inset-0 z-30" onClick={() => setRailPanel(null)} />
-            <div className="fixed left-16 top-16 z-40 w-80 max-h-[70vh] overflow-hidden rounded-2xl border border-white/10 bg-[#2a2a2a] shadow-2xl">
+            <div className="fixed left-16 top-16 z-40 max-h-[70vh] w-[min(20rem,calc(100vw-5rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#2a2a2a] shadow-2xl">
               {railPanel === "search" ? (
                 <div className="flex flex-col max-h-[70vh]">
                   <div className="flex items-center gap-2 border-b border-white/10 px-3 py-3">
@@ -326,7 +329,13 @@ function SideBar() {
             </button>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden">
+          <div
+            className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden"
+            onScroll={() => {
+              setMenuId(null);
+              setMenuPos(null);
+            }}
+          >
             {[{ label: "Pinned", items: pinnedChats }, { label: showArchived ? "Archived" : "Recents", items: recentChats }].map((section) => (
               section.items.length > 0 && (
                 <div key={section.label}>
@@ -371,14 +380,29 @@ function SideBar() {
                           className="shrink-0 text-slate-500 hover:text-slate-200"
                           onClick={(event) => {
                             event.stopPropagation();
-                            setMenuId(menuId == conv._id ? null : conv._id);
+                            if (menuId == conv._id) {
+                              setMenuId(null);
+                              setMenuPos(null);
+                              return;
+                            }
+                            const rect = event.currentTarget.getBoundingClientRect();
+                            const menuHeight = 168;
+                            const top = rect.bottom + menuHeight > window.innerHeight - 12
+                              ? Math.max(8, rect.top - menuHeight)
+                              : rect.bottom + 4;
+                            setMenuPos({
+                              top,
+                              left: Math.max(8, Math.min(rect.right - 160, window.innerWidth - 168)),
+                            });
+                            setMenuId(conv._id);
                           }}
                         >
                           <MoreHorizontal size={15} />
                         </button>
-                        {menuId == conv._id && (
+                        {menuId == conv._id && menuPos && (
                           <div
-                            className="absolute right-2 top-10 z-20 w-40 rounded-xl border border-white/10 bg-[#1b1d27] p-1 shadow-xl"
+                            className="fixed z-[70] w-40 rounded-xl border border-white/10 bg-[#1b1d27] p-1 shadow-xl"
+                            style={{ top: menuPos.top, left: menuPos.left }}
                             onClick={(event) => event.stopPropagation()}
                           >
                             <button className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] text-slate-200 hover:bg-white/5" onClick={() => { setRename({ id: conv._id, title: conv.title || "" }); setMenuId(null); }}>
@@ -448,6 +472,7 @@ function SideBar() {
                   <button
                     className="flex items-center justify-center w-7 h-7 rounded-[7px] border-none bg-transparent text-slate-600 cursor-pointer hover:bg-white/8 hover:text-slate-400 transition-all duration-150"
                     onClick={() => {
+                      setMobileOpen(false);
                       logOut();
                       dispatch(setUserdata(null));
                     }}

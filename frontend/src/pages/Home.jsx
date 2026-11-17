@@ -34,15 +34,15 @@ function Home() {
   };
 
   return (
-    <div className="h-screen flex bg-[#0d0f14] text-white overflow-hidden">
+    <div className="flex h-dvh max-h-dvh overflow-hidden bg-[#0d0f14] text-white">
 
     <SideBar/>
     <ChatArea/>
     <Artifact/>
 
 
-      {!userData && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur">
-        <div className="w-85 bg-[#13151c] border border-white/8 rounded-2xl p-7 flex flex-col gap-5">
+      {!userData && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 backdrop-blur">
+        <div className="flex w-full max-w-[340px] flex-col gap-5 rounded-2xl border border-white/8 bg-[#13151c] p-7">
           <div className="flex flex-col gap-1">
             <h2 className="text-[17px] font-semibold text-slate-100 tracking-tight">
               Welcome to NexoraAI

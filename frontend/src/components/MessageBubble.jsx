@@ -13,7 +13,7 @@ function MessageBubble({role, content, images}){
   const [copiedCode, setCopiedCode] = useState("")
 
   const copyMessage = async () => {
-    await navigator.clipboard.writeText(content || "")
+    await navigator.clipboard.writeText(text || "")
     setCopiedMessage(true)
     setTimeout(() => setCopiedMessage(false), 2000)
   }
@@ -27,6 +27,12 @@ function MessageBubble({role, content, images}){
   }
   
   // console.log("MESSAGE CONTENT:", content);
+
+  const text = typeof content === "string"
+    ? content
+    : Array.isArray(content)
+      ? content.map((part) => (typeof part === "string" ? part : part?.text || "")).join("")
+      : "";
 
   const photos = (Array.isArray(images) ? images : [])
     .map((img) => (typeof img === "string" ? img : img?.url))
@@ -51,8 +57,8 @@ function MessageBubble({role, content, images}){
           </div>
         )}
 
-        {content ? (
-      <div className={`w-fit max-w-full px-4 py-2.5 rounded-3xl wrap-break-word overflow-hidden leading-relaxed ${
+        {text ? (
+      <div className={`${isUser ? "w-fit" : "w-full min-w-0"} max-w-full px-4 py-2.5 rounded-3xl wrap-break-word overflow-x-auto leading-relaxed ${
         isUser
           ? "bg-linear-to-br from-indigo-500 to-violet-700 text-white"
           : "px-0 text-slate-200"
@@ -76,15 +82,15 @@ function MessageBubble({role, content, images}){
               <ol className="list-decimal pl-5 space-y-1 my-2">{children}</ol>
             ),
             table:({children})=>(
-              <div className="overflow-x-auto my-4">
-                <table className="min-w-full border border-white/10">{children}</table>
+              <div className="my-2 w-full overflow-x-auto">
+                <table className="w-full border-collapse text-[13px]">{children}</table>
               </div>
             ),
             th:({children})=>(
-              <th className="border border-white/10 bg-white/5 px-3 py-2 text-left">{children}</th>
+              <th className="border border-white/10 bg-white/5 px-2 py-1.5 text-left font-medium whitespace-nowrap">{children}</th>
             ),
             td:({children})=>(
-              <td className="border border-white/10 px-3 py-2 ">{children}</td>
+              <td className="border border-white/10 px-2 py-1.5 align-top">{children}</td>
             ),
             a:({href,children})=>(
               <a href={href}
@@ -170,10 +176,10 @@ function MessageBubble({role, content, images}){
 
           }}
         >
-          {content}
+          {text}
         </Markdown>
 
-        {!isUser && content && (
+        {!isUser && text && (
           <button
             onClick={copyMessage}
             className="mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-200 cursor-pointer"
@@ -188,7 +194,7 @@ function MessageBubble({role, content, images}){
 
 
       {lightBox && 
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
             <button
               className="absolute top-5 right-5 text-white/80 hover:text-white bg-white/10 rounded-full p-2"
               onClick={() => setLightBox(null)}

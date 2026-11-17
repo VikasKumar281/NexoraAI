@@ -58,7 +58,7 @@ function BillingDrawer({ open, onClose }) {
             animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black z-40"
+            className="fixed inset-0 bg-black z-[70]"
           />
 
           <motion.div
@@ -66,7 +66,7 @@ function BillingDrawer({ open, onClose }) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.25 }}
-            className="fixed right-0 top-0 z-50 h-dvh w-full max-w-90 bg-[#0f1117] border-l border-white/10 shadow-2xl flex flex-col"
+            className="fixed right-0 top-0 z-[80] h-dvh w-full max-w-90 bg-[#0f1117] border-l border-white/10 shadow-2xl flex flex-col"
           >
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <div>

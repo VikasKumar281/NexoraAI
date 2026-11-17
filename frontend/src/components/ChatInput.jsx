@@ -335,7 +335,7 @@ function ChatInput({ centered = false }) {
   ];
 
   return (
-    <div className={centered ? "w-full" : "w-full px-3 md:px-6 pb-5 pt-2 bg-[#0d0f14]"}>
+    <div className={centered ? "w-full" : "w-full bg-[#0d0f14] px-3 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:px-6"}>
       <div
         onDragOver={(event) => {
           event.preventDefault();
