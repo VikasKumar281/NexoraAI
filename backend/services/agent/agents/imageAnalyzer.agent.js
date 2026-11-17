@@ -3,6 +3,7 @@ import { getModel } from "../config/llmModels.js";
 import fs from "node:fs/promises";
 import { deductCredits } from "../utils/deductCredits.js";
 import { checkAgentLimit } from "../config/agentlimit.js";
+import { modelText } from "../utils/readModelJson.js";
 
 export const imageAnalyzer = async (state) => {
   
@@ -25,7 +26,8 @@ export const imageAnalyzer = async (state) => {
                 - If text exists in the image, extract it.
                 - If charts or tables exist, explain them.
                 - If something is unclear, say so.
-                - Use Markdown when helpful.
+                - Write like ChatGPT: the answer first, in the user's language, in short paragraphs.
+                - Use a bullet list only when several points need to be separate. Do not add a title or heading.
                 - Do not hallucinate.
             `),
       new HumanMessage({
@@ -49,7 +51,7 @@ export const imageAnalyzer = async (state) => {
 
     return{
         ...state,
-        aiResponse:response.content
+        aiResponse: modelText(response.content).trim() || "I could not read this image."
     }
 
   } 

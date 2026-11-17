@@ -3,6 +3,7 @@ import {
   Coins,
   LogOut,
   Menu,
+  MessageSquare,
   MoreHorizontal,
   PanelLeftIcon,
   PanelRight,
@@ -47,6 +48,7 @@ function SideBar() {
   const [showArchived, setShowArchived] = useState(false);
   const [menuId, setMenuId] = useState(null);
   const [rename, setRename] = useState(null);
+  const [railPanel, setRailPanel] = useState(null);
 
 
 
@@ -128,22 +130,98 @@ function SideBar() {
         .sort((a, b) => new Date(b.pinnedAt || 0) - new Date(a.pinnedAt || 0));
   const recentChats = (showArchived ? visibleChats : visibleChats.filter((conv) => !conv.pinned)).sort(byNewest);
 
+  const openRailChat = (conv) => {
+    dispatch(setSelectedConversation(conv));
+    setRailPanel(null);
+    setQuery("");
+  };
+
+  const railButton = (id, label, icon) => (
+    <button
+      title={label}
+      className={`flex items-center justify-center w-9 h-9 rounded-xl border-none cursor-pointer transition-colors duration-150 ${
+        railPanel === id ? "bg-white/10 text-slate-100" : "bg-transparent text-slate-500 hover:text-slate-200 hover:bg-white/5"
+      }`}
+      onClick={() => setRailPanel(railPanel === id ? null : id)}
+    >
+      {icon}
+    </button>
+  );
+
   if (collapsed) {
+    const byUpdated = (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+    const named = (conv) => (conv.title || "New Chat").toLowerCase().includes(query.trim().toLowerCase());
+    const railPinned = (conversations || []).filter((conv) => conv.pinned && !conv.archived).sort((a, b) => new Date(b.pinnedAt || 0) - new Date(a.pinnedAt || 0));
+    const railRecent = (conversations || []).filter((conv) => !conv.pinned && !conv.archived).sort(byUpdated);
+    const railArchived = (conversations || []).filter((conv) => conv.archived).sort(byUpdated);
+    const railSearch = (conversations || []).filter(named).sort(byUpdated);
+
     return (
       <div className="hidden lg:flex flex-col items-center w-14 h-screen bg-[#0d0f14] border-r border-white/6 py-4 gap-1 shrink-0">
         <button
           className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-colors duration-150 bg-transparent border-none cursor-pointer"
-          onClick={() => setCollapsed(false)}
+          onClick={() => { setRailPanel(null); setCollapsed(false); }}
         >
           <PanelRight />
         </button>
 
         <button
           className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-colors duration-150 bg-transparent border-none cursor-pointer"
-          onClick={startNewChat}
+          onClick={() => { setRailPanel(null); startNewChat(); }}
         >
           <PenSquare size={17} />
         </button>
+
+        {railButton("search", "Search chats", <Search size={17} />)}
+        {railButton("chats", "Chats", <MessageSquare size={17} />)}
+
+        {railPanel && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setRailPanel(null)} />
+            <div className="fixed left-16 top-16 z-40 w-80 max-h-[70vh] overflow-hidden rounded-2xl border border-white/10 bg-[#2a2a2a] shadow-2xl">
+              {railPanel === "search" ? (
+                <div className="flex flex-col max-h-[70vh]">
+                  <div className="flex items-center gap-2 border-b border-white/10 px-3 py-3">
+                    <Search size={15} className="text-slate-400" />
+                    <input
+                      autoFocus
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="Search..."
+                      className="w-full bg-transparent text-[14px] text-slate-100 outline-none placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div className="overflow-y-auto p-2">
+                    <div className="px-2 py-1.5 text-[12px] text-slate-400">Recent chats</div>
+                    {railSearch.map((conv) => (
+                      <button key={conv._id} onClick={() => openRailChat(conv)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[14px] text-slate-100 hover:bg-white/10 bg-transparent border-none cursor-pointer">
+                        <MessageSquare size={14} className="text-slate-400 shrink-0" />
+                        <span className="truncate">{conv.title || "New Chat"}</span>
+                      </button>
+                    ))}
+                    {railSearch.length === 0 && <div className="px-2 py-3 text-[13px] text-slate-500">No chats found</div>}
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-y-auto max-h-[70vh] p-2">
+                  {[{ label: "Pinned", items: railPinned }, { label: "Recents", items: railRecent }, { label: "Archived", items: railArchived }].map((section) => (
+                    section.items.length > 0 && (
+                      <div key={section.label} className="mb-2">
+                        <div className="px-2 py-1.5 text-[12px] text-slate-400">{section.label}</div>
+                        {section.items.map((conv) => (
+                          <button key={conv._id} onClick={() => openRailChat(conv)} className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[14px] cursor-pointer border-none ${selectedConversation?._id == conv._id ? "bg-white/10 text-white" : "bg-transparent text-slate-100 hover:bg-white/10"}`}>
+                            {section.label === "Pinned" ? <Pin size={14} className="text-slate-400 shrink-0" /> : section.label === "Archived" ? <Archive size={14} className="text-slate-400 shrink-0" /> : <MessageSquare size={14} className="text-slate-400 shrink-0" />}
+                            <span className="truncate">{conv.title || "New Chat"}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         <div className="flex-1" />
 
@@ -183,12 +261,12 @@ function SideBar() {
       )}
 
       <div
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-[270px] h-screen shrink-0 bg-[#0d0f14] border-r border-white/[0.06] transition-transform duration-250 ${
+        className={`fixed lg:static inset-y-0 left-0 z-[60] w-[270px] h-dvh max-h-dvh shrink-0 bg-[#0d0f14] border-r border-white/[0.06] transition-transform duration-250 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
       
-        <div className="flex flex-col h-full">
+        <div className="flex h-full min-h-0 flex-col">
           <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/6">
             <div
               className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-colors duration-150 bg-transparent border-none cursor-pointer"
@@ -248,7 +326,7 @@ function SideBar() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-2.5 pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden">
             {[{ label: "Pinned", items: pinnedChats }, { label: showArchived ? "Archived" : "Recents", items: recentChats }].map((section) => (
               section.items.length > 0 && (
                 <div key={section.label}>
@@ -332,8 +410,8 @@ function SideBar() {
             )}
           </div>
 
-          <div className="mx-2.5 h-px bg-white/60" />
-          <div className="px-3.5 py-3.5">
+          <div className="mx-2.5 h-px shrink-0 bg-white/10" />
+          <div className="shrink-0 px-3.5 py-3 pb-[max(14px,env(safe-area-inset-bottom))]">
             {userData ? (
               <div className="flex items-center gap-2.5 cursor-pointer rounded-xl px-3 py-2.5 hover:bg-white/5 transistion-colors duration-150">
                 <div className="relative shrink-0">
@@ -362,7 +440,7 @@ function SideBar() {
 
                 <div className="flex gap-1">
                   <button 
-                    onClick={() => setShowBilling(true)}
+                    onClick={() => setShowBilling((open) => !open)}
                     className="flex items-center justify-center w-7 h-7 rounded-[7px] border-none bg-transparent text-yellow-600 cursor-pointer hover:bg-white/8 hover:text-slate-400 transition-all duration-150"
                   >
                     <Coins size={16} />

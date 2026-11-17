@@ -54,7 +54,7 @@ function MessageBubble({role, content, images}){
         {content ? (
       <div className={`w-fit max-w-full px-4 py-2.5 rounded-3xl wrap-break-word overflow-hidden leading-relaxed ${
         isUser
-          ? "bg-[#2f2f2f] text-white"
+          ? "bg-linear-to-br from-indigo-500 to-violet-700 text-white"
           : "px-0 text-slate-200"
       }`}>
         <Markdown

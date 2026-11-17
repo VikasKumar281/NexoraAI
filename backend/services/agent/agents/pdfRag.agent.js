@@ -6,6 +6,7 @@ import { getModel } from "../config/llmModels.js";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { deductCredits } from "../utils/deductCredits.js";
 import { checkAgentLimit } from "../config/agentlimit.js";
+import { modelText } from "../utils/readModelJson.js";
 
 
 export const pdfRag= async (state)=>{
@@ -46,7 +47,8 @@ export const pdfRag= async (state)=>{
 
                 "I couldn't find this information in the uploaded PDF."
 
-                - Use Markdown formatting.
+                - Write like ChatGPT: the answer first, in the user's language, in short paragraphs.
+                - Use a bullet list only when several points need to be separate. Do not add a title or heading.
             `),
 
             new HumanMessage(`
@@ -62,7 +64,7 @@ export const pdfRag= async (state)=>{
 
         return{
             ...state,
-            aiResponse:response.content
+            aiResponse: modelText(response.content).trim() || "I could not read this PDF."
         }
 
     } 
@@ -76,6 +78,12 @@ export const pdfRag= async (state)=>{
     }
 
     finally{
-        fs.unlinkSync(state.file.path)
+        if (state.file?.path) {
+            try {
+                fs.unlinkSync(state.file.path)
+            } catch {
+                /* temp file is already gone */
+            }
+        }
     }
 }

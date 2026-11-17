@@ -5,6 +5,7 @@ import { getModel } from "../config/llmModels.js";
 import { saveGeneratedFile } from "../utils/saveGeneratedFile.js";
 import { deductCredits } from "../utils/deductCredits.js";
 import { checkAgentLimit } from "../config/agentlimit.js";
+import { modelText } from "../utils/readModelJson.js";
 
 export const visionAgent = async(state) =>{
     try {
@@ -36,7 +37,7 @@ export const visionAgent = async(state) =>{
             ${state.prompt}
         `)
 
-        const prompt = res.content.trim()
+        const prompt = modelText(res.content).trim()
 
         const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`
         // console.log("Image generation URL:", imageUrl);

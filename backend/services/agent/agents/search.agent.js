@@ -28,9 +28,10 @@ export const searchAgent = async(state) =>{
        const compact = compactSearch(results)
        return {
         ...state,
-        searchResults: compact.results,
-        images: compact.images,
-        aiResponse: compact.answer.length > 40 ? compact.answer : undefined
+        searchResults: compact.answer
+            ? [{ title: "Summary", content: compact.answer }, ...compact.results]
+            : compact.results,
+        images: compact.images
        }
     }
     catch(error){

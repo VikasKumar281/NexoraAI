@@ -1,3 +1,4 @@
+import { modelText, readModelJson } from "../utils/readModelJson.js";
 import { checkAgentLimit } from "../config/agentlimit.js";
 import { getModel } from "../config/llmModels.js";
 import { deductCredits } from "../utils/deductCredits.js";
@@ -99,7 +100,7 @@ export const codingAgent = async (state) => {
       const res = await llm.invoke(prompt);
       // console.log(JSON.parse(res.content));
 
-      const data = JSON.parse(res.content);
+      const data = readModelJson(res.content);
       await deductCredits(state.userId, "coding");
       return {
         ...state,
@@ -143,7 +144,7 @@ export const codingAgent = async (state) => {
     ${state.prompt}
     `);
 
-    const data = res.content;
+    const data = modelText(res.content);
     await deductCredits(state.userId, "coding");
     return {
       ...state,
