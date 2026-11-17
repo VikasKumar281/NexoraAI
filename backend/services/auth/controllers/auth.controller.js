@@ -82,19 +82,23 @@ export const updateUserPayment = async(req, res)=>{
 
         await user.save();
 
-        const sessionId = await redis.get(`user-session-${user?._id}`)
-        await redis.set(`session-${sessionId}`, JSON.stringify({
-            userId:user._id,
-            name:user.name,
-            email:user.email,
-            avatar:user.avatar,
-            plan:user.plan,
-            credits:user.credits,
-            totalCredits:user.totalCredits,
-            planExpiresAt:user.planExpiresAt
-        }), "EX", 7 * 24 * 60*60)
+        const session = {
+            userId: user._id,
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar,
+            plan: user.plan,
+            credits: user.credits,
+            totalCredits: user.totalCredits,
+            planExpiresAt: user.planExpiresAt,
+        }
+        const storedSessionId = await redis.get(`user-session-${user?._id}`)
+        const sessionIds = new Set([req.body.sessionId, storedSessionId].filter(Boolean))
+        await Promise.all([...sessionIds].map((sessionId) =>
+            redis.set(`session-${sessionId}`, JSON.stringify(session), "EX", 7 * 24 * 60 * 60)
+        ))
 
-        return res.status(200).json({success:true})
+        return res.status(200).json({ success: true, user: session })
 
     } catch (error) {
         return res.status(500).json({message: `update user paymennt error ${error}`})

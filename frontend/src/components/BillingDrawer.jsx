@@ -26,11 +26,10 @@ function BillingDrawer({ open, onClose }) {
         order_id: data?.order?.id,
         handler: async (response) => {
           try {
-            await verifyPayment(response);
+            const verified = await verifyPayment(response);
             const session = await getCurrentUser();
-            if (session) {
-              dispatch(setUserdata(applySession(userData, session)));
-            }
+            const current = applySession(userData, session);
+            dispatch(setUserdata(applySession(current, verified?.user)));
             setNotice("Payment successful. Your plan and credits are updated.");
           } catch (error) {
                 console.log(error);

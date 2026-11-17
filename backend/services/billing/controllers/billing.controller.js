@@ -66,13 +66,20 @@ export const verifyPayment = async (req, res)=>{
 
         await payment.save()
 
-        const planUpdate = { userId: payment.userId, plan: payment.plan, credits: payment.credits }
+        const planUpdate = {
+            userId: payment.userId,
+            plan: payment.plan,
+            credits: payment.credits,
+            sessionId: req.cookies?.session,
+        }
         const data = process.env.AUTH_SERVICE
             ? (await axios.post(`${process.env.AUTH_SERVICE}/update-plan`, planUpdate)).data
             : await callHandler(updateUserPayment, { body: planUpdate })
-        console.log(data)
-        
-        return res.status(200).json({message:"Payment Verified"})
+
+        return res.status(200).json({
+            message: "Payment Verified",
+            user: data?.user,
+        })
     } 
     catch (error) {
         return res.status(500).json({message:`verify payment error ${error}`})        

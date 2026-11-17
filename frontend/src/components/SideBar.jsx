@@ -176,7 +176,7 @@ function SideBar() {
         </button>
 
         {railButton("search", "Search chats", <Search size={17} />)}
-        {railButton("chats", "Chats", <MessageSquare size={17} />)}
+        {railButton("chats", "Recent", <MessageSquare size={17} />)}
 
         {railPanel && (
           <>
@@ -371,11 +371,13 @@ function SideBar() {
                             />
                           </form>
                         ) : (
-                          <span className={`text-[13px] font-medium truncate flex-1 ${isActive ? "text-slate-100" : "text-slate-300"}`}>
-                            {conv?.title || "New Chat"}
+                          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                            {conv.pinned && <Pin size={13} className="shrink-0 text-indigo-300" />}
+                            <span className={`truncate text-[13px] font-medium ${isActive ? "text-slate-100" : "text-slate-300"}`}>
+                              {conv?.title || "New Chat"}
+                            </span>
                           </span>
                         )}
-                        {conv.pinned && <Pin size={12} className="text-indigo-400" />}
                         <button
                           className="shrink-0 text-slate-500 hover:text-slate-200"
                           onClick={(event) => {
